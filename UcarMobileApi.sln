@@ -1,0 +1,57 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{366FA705-B5F2-4D9D-88A0-751337057189}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UcarMobileApi", "src\UcarMobileApi\UcarMobileApi.csproj", "{C01BBDB5-BE68-41CD-9425-C1E34A4526E4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UcarMobileApi.Core", "src\UcarMobileApi.Core\UcarMobileApi.Core.csproj", "{9EF52591-A707-4424-A184-6C45CC1FA00D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UcarMobileApi.Application", "src\UcarMobileApi.Application\UcarMobileApi.Application.csproj", "{D2E4BCD4-23AB-466A-82C9-717AB225A4C3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UcarMobileApi.Infrastructure", "src\UcarMobileApi.Infrastructure\UcarMobileApi.Infrastructure.csproj", "{0267C786-CC4E-4836-AC56-DC56CCD27D8B}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{F8431853-0DEA-4B9E-ACF2-78D55A953046}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UcarMobileApi.Tests", "tests\UcarMobileApi.Tests\UcarMobileApi.Tests.csproj", "{1F467025-59E9-4E5A-945E-B5C536B400A5}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{C01BBDB5-BE68-41CD-9425-C1E34A4526E4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C01BBDB5-BE68-41CD-9425-C1E34A4526E4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C01BBDB5-BE68-41CD-9425-C1E34A4526E4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C01BBDB5-BE68-41CD-9425-C1E34A4526E4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9EF52591-A707-4424-A184-6C45CC1FA00D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9EF52591-A707-4424-A184-6C45CC1FA00D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9EF52591-A707-4424-A184-6C45CC1FA00D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9EF52591-A707-4424-A184-6C45CC1FA00D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D2E4BCD4-23AB-466A-82C9-717AB225A4C3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D2E4BCD4-23AB-466A-82C9-717AB225A4C3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D2E4BCD4-23AB-466A-82C9-717AB225A4C3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D2E4BCD4-23AB-466A-82C9-717AB225A4C3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0267C786-CC4E-4836-AC56-DC56CCD27D8B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0267C786-CC4E-4836-AC56-DC56CCD27D8B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0267C786-CC4E-4836-AC56-DC56CCD27D8B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0267C786-CC4E-4836-AC56-DC56CCD27D8B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1F467025-59E9-4E5A-945E-B5C536B400A5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1F467025-59E9-4E5A-945E-B5C536B400A5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1F467025-59E9-4E5A-945E-B5C536B400A5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1F467025-59E9-4E5A-945E-B5C536B400A5}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{C01BBDB5-BE68-41CD-9425-C1E34A4526E4} = {366FA705-B5F2-4D9D-88A0-751337057189}
+		{9EF52591-A707-4424-A184-6C45CC1FA00D} = {366FA705-B5F2-4D9D-88A0-751337057189}
+		{D2E4BCD4-23AB-466A-82C9-717AB225A4C3} = {366FA705-B5F2-4D9D-88A0-751337057189}
+		{0267C786-CC4E-4836-AC56-DC56CCD27D8B} = {366FA705-B5F2-4D9D-88A0-751337057189}
+		{1F467025-59E9-4E5A-945E-B5C536B400A5} = {F8431853-0DEA-4B9E-ACF2-78D55A953046}
+	EndGlobalSection
+EndGlobal

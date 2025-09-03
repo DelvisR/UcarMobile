@@ -1,0 +1,20 @@
+2025-09-02 19:51:02.775 -04:00 [INF] ✅ Serilog initialized from appsettings.json.
+2025-09-02 19:51:02.806 -04:00 [WRN] ⚠️ Sentry DSN format is invalid. Sentry will not be enabled. Falling back to Serilog only.
+2025-09-02 19:53:57.302 -04:00 [INF] ✅ Serilog initialized from appsettings.json.
+2025-09-02 19:53:57.332 -04:00 [WRN] ⚠️ Sentry DSN format is invalid. Sentry will not be enabled. Falling back to Serilog only.
+2025-09-02 20:00:55.501 -04:00 [INF] ✅ Serilog initialized from appsettings.json.
+2025-09-02 20:00:55.529 -04:00 [WRN] ⚠️ Sentry DSN format is invalid. Sentry will not be enabled. Falling back to Serilog only.
+2025-09-02 20:01:08.576 -04:00 [INF] ✅ Serilog initialized from appsettings.json.
+2025-09-02 20:01:08.607 -04:00 [WRN] ⚠️ Sentry DSN format is invalid. Sentry will not be enabled. Falling back to Serilog only.
+2025-09-02 20:35:44.116 -04:00 [INF] ✅ Serilog initialized from appsettings.json.
+2025-09-02 20:35:44.147 -04:00 [WRN] ⚠️ Sentry DSN format is invalid. Sentry will not be enabled. Falling back to Serilog only.
+2025-09-02 20:47:22.717 -04:00 [INF] ✅ Serilog initialized from appsettings.json.
+2025-09-02 20:47:22.747 -04:00 [WRN] ⚠️ Sentry DSN format is invalid. Sentry will not be enabled. Falling back to Serilog only.
+2025-09-02 20:51:55.493 -04:00 [INF] ✅ Serilog initialized from appsettings.json.
+2025-09-02 20:51:55.522 -04:00 [WRN] ⚠️ Sentry DSN format is invalid. Sentry will not be enabled. Falling back to Serilog only.
+2025-09-02 20:53:59.372 -04:00 [INF] ✅ Serilog initialized from appsettings.json.
+2025-09-02 20:53:59.402 -04:00 [WRN] ⚠️ Sentry DSN format is invalid. Sentry will not be enabled. Falling back to Serilog only.
+2025-09-02 20:57:39.590 -04:00 [INF] ✅ Serilog initialized from appsettings.json.
+2025-09-02 20:57:39.626 -04:00 [WRN] ⚠️ Sentry DSN format is invalid. Sentry will not be enabled. Falling back to Serilog only.
+2025-09-02 20:59:59.443 -04:00 [INF] ✅ Serilog initialized from appsettings.json.
+2025-09-02 20:59:59.474 -04:00 [WRN] ⚠️ Sentry DSN format is invalid. Sentry will not be enabled. Falling back to Serilog only.

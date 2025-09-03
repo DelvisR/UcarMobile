@@ -1,0 +1,32 @@
+# Build outputs
+bin/
+obj/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.ncrunch*
+*.resharper
+
+# Rider
+.idea/
+
+# NuGet packages
+*.nupkg
+*.snupkg
+packages/
+
+# User-specific files
+*.userprefs
+
+# Logs
+*.log
+
+# Local settings
+appsettings.Local.json
+
+# Dotnet
+*.DS_Store
+*.dotCover
+*.dotTrace

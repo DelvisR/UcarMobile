@@ -1,0 +1,2 @@
+2025-08-29 18:55:55.948 -04:00 [INF] ✅ Serilog initialized from appsettings.json.
+2025-08-29 18:55:55.981 -04:00 [WRN] ⚠️ Sentry DSN format is invalid. Sentry will not be enabled. Falling back to Serilog only.
