@@ -1,0 +1,56 @@
+# ========================
+# C# source code
+# ========================
+*.cs     text eol=lf
+*.csproj text eol=lf
+*.sln    text eol=lf
+
+# ========================
+# JSON
+# ========================
+*.json   text eol=lf
+
+# ========================
+# XML
+# ========================
+*.xml    text eol=lf
+*.config text eol=lf
+*.xsd    text eol=lf
+
+# ========================
+# Markdown
+# ========================
+*.md     text eol=lf
+
+# ========================
+# Scripts
+# ========================
+*.ps1    text eol=lf
+*.sh     text eol=lf
+*.bat    text eol=crlf
+
+# ========================
+# Text files
+# ========================
+*.txt    text eol=lf
+*.log    text eol=lf
+
+# ========================
+# Ignore binaries
+# ========================
+*.png    binary
+*.jpg    binary
+*.jpeg   binary
+*.gif    binary
+*.ico    binary
+*.exe    binary
+*.dll    binary
+*.zip    binary
+*.7z     binary
+*.tar    binary
+*.gz     binary
+
+# ========================
+# Automatically handle line endings
+# ========================
+* text=auto
