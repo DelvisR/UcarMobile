@@ -4,6 +4,6 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
-    <Folder Include="Interfaces\" />
+    <Folder Include="Security\" />
   </ItemGroup>
 </Project>

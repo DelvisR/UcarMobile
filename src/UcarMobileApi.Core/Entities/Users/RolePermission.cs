@@ -1,6 +1,6 @@
 ﻿namespace UcarMobileApi.Core.Entities.Users;
 
-public class RolePermission
+public class RolePermission : EntityBase
 {
     public int RoleId { get; set; }
     public int PermissionId { get; set; }

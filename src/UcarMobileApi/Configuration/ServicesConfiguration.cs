@@ -2,10 +2,22 @@ using UcarMobileApi.Application.Services;
 
 namespace UcarMobileApi.Configuration;
 
+/// <summary>
+/// Provides extension methods to register application services.
+/// </summary>
+/// <remarks>
+/// Uses assembly scanning to automatically register services and their interfaces with dependency injection.
+/// </remarks>
 public static class ServicesConfiguration
 {
+    /// <summary>
+    /// Registers application-layer services and their dependencies into the service collection.
+    /// </summary>
+    /// <param name="services">The service collection to register services in.</param>
+    /// <returns>The updated service collection.</returns>
     public static IServiceCollection AddApplicationServices(this IServiceCollection services)
     {
+        // Application Service Registration
         services.Scan(scan => scan
             .FromAssemblyOf<ServiceRegistrationMarker>() // Assembly reference
             .AddClasses(classes => classes.InNamespaceOf<ServiceRegistrationMarker>()) // only this namespace

@@ -1,6 +1,6 @@
 ﻿namespace UcarMobileApi.Core.Entities.Users;
 
-public class UserRole
+public class UserRole : EntityBase
 {
     public int UserId { get; set; }
     public int RoleId { get; set; }

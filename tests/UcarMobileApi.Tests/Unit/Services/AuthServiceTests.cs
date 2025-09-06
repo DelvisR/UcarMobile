@@ -3,14 +3,16 @@ using Moq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using UcarMobileApi.Application.DTOs.Users;
+using UcarMobileApi.Application.Services.Auth;
 using UcarMobileApi.Application.Services.Security;
 using UcarMobileApi.Core.Entities.Users;
 using UcarMobileApi.Tests.TestHelpers;
 using Xunit;
 
-namespace UcarMobileApi.Tests;
+namespace UcarMobileApi.Tests.Unit.Services;
 
 public class AuthServiceTests
 {
@@ -27,17 +29,13 @@ public class AuthServiceTests
         await context.SaveChangesAsync();
 
         var mapper = TestMapperFactory.CreateMapper();
-        var validator = TestValidatorFactory.CreateAlwaysValidUserValidator();
 
         // Authorization mock: only used in GetCurrentUserAsync, so not relevant here
         var auth = new Mock<IUserAuthorizationService>();
 
-        // IConfiguration is not used in RegisterUserAsync
-        var config = new Mock<Microsoft.Extensions.Configuration.IConfiguration>();
+        var service = new AuthService(context, auth.Object, mapper);
 
-        var service = new AuthService(context, auth.Object, config.Object, validator, mapper);
-
-        var dto = new CreateUserDto
+        var dto = new UserDto
         {
             CognitoId = "cog-123",
             Email = "john.doe@example.com",
@@ -46,18 +44,7 @@ public class AuthServiceTests
         };
 
         // Act
-        var created = await service.RegisterUserAsync(dto);
-
-        // Assert
-        Assert.NotNull(created);
-        Assert.True(created.Id > 0);
-        Assert.Equal("cog-123", created.CognitoId);
-        Assert.Equal("john.doe@example.com", created.Email);
-        Assert.Equal("John", created.FirstName);
-        Assert.Equal("Doe", created.LastName);
-        Assert.True(created.IsActive);
-        Assert.Single(created.Roles);                    // Must have the Customer role
-        Assert.Equal("Customer", created.Roles[0].Name);
+        await service.RegisterUserAsync(dto, CancellationToken.None);
 
         // Verify in DB
         var inDb = await context.Set<User>()
@@ -96,17 +83,15 @@ public class AuthServiceTests
 
         // Authorization mock: this IS used here
         var auth = new Mock<IUserAuthorizationService>();
-        auth.Setup(a => a.GetUserPermissionsAsync("cog-abc"))
-            .ReturnsAsync(new List<string> { "appointment.schedule", "appointment.view.own" });
+        auth.Setup(a => a.GetUserPermissionsAsync("cog-abc", CancellationToken.None))
+            .ReturnsAsync(["appointment.schedule", "appointment.view.own"]);
 
         var mapper = TestMapperFactory.CreateMapper();
-        var validator = TestValidatorFactory.CreateAlwaysValidUserValidator();
-        var config = new Mock<Microsoft.Extensions.Configuration.IConfiguration>();
 
-        var service = new AuthService(context, auth.Object, config.Object, validator, mapper);
+        var service = new AuthService(context, auth.Object, mapper);
 
         // Act
-        dynamic result = await service.GetCurrentUserAsync("cog-abc");
+        dynamic result = await service.GetCurrentUserAsync("cog-abc", CancellationToken.None);
 
         // Assert (dynamic to access properties of the anonymous object)
         Assert.Equal("cog-abc", (string)result.CognitoId);

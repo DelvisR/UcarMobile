@@ -3,6 +3,8 @@
 public static class ValidatorErrors
 {
     public const string IsRequired = "{PropertyName} is required.";
+    public const string NoEmpty = "{PropertyName} cannot be empty.";
+    public const string Duplicated = "There is already a value registered for {PropertyName}.";
     public const string MinLenght = "{{PropertyName}} must be {0} character min.";
     public const string MaxLengthExceeded = "{{PropertyName}} must be {0} character max.";
     public const string LengthMismatch = "{{PropertyName}} must be {0} character.";

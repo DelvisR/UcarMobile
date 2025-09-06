@@ -1,13 +1,14 @@
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 using UcarMobileApi.Application.DTOs.Users;
 using UcarMobileApi.Application.Services.Users;
-using UcarMobileApi.Attributes;
+using UcarMobileApi.Authorization;
 
 namespace UcarMobileApi.Controllers.Users;
 
 /// <summary>
 /// API controller for managing users.
+/// The "ct" parameter is a cancellation token automatically injected from "HttpContext.RequestAborted".
+/// You do not need to specify it.
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]
@@ -15,88 +16,81 @@ public class UsersController(UserService userService) : ControllerBase
 {
     /// <summary>
     /// Gets all users.
-    /// Requires 'user.view' permission.
+    /// Requires 'USER_VIEW' permission.
     /// </summary>
+    /// <param name="ct">Request cancellation token.</param>
     /// <response code="200">Returns the list of users.</response>
     /// <response code="401">User not authorized.</response>
     /// <response code="403">User does not have permission.</response>
     [HttpGet]
-    [RequirePermission("user.view")]
-    public async Task<ActionResult<IEnumerable<UserDto>>> GetUsers()
-        => Ok(await userService.GetUsersAsync());
+    [RequirePermission("USER_VIEW")]
+    public async Task<ActionResult<IEnumerable<UserDto>>> GetUsers(CancellationToken ct)
+        => Ok(await userService.GetUsersAsync(ct));
 
     /// <summary>
     /// Gets a specific user by ID.
-    /// Requires 'user.view' permission.
+    /// Requires 'USER_VIEW' permission.
     /// </summary>
     /// <param name="id">The user ID.</param>
+    /// <param name="ct">Request cancellation token.</param>
     /// <response code="200">UserDto if found.</response>
     /// <response code="404">NotFound otherwise.</response>
-    [HttpGet("{id}")]
-    [RequirePermission("user.view")]
-    public async Task<ActionResult<UserDto>> GetUser(int id)
+    [HttpGet("{id:int}")]
+    [RequirePermission("USER_VIEW")]
+    public async Task<ActionResult<UserDto>> GetUser(int id, CancellationToken ct)
     {
-        var user = await userService.GetUserAsync(id);
+        var user = await userService.GetUserAsync(id, ct);
         return user == null ? NotFound() : Ok(user);
     }
 
     /// <summary>
+    /// Creates a new user (basic info and roles).
+    /// Requires 'USER_CREATE' permission.
+    /// </summary>
+    /// <param name="userDto">The user data.</param>
+    /// <param name="ct">Request cancellation token.</param>
+    /// <response code="204">No Content.</response>
+    [HttpPost]
+    [RequirePermission("USER_CREATE")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> CreateUser(UserDto userDto, CancellationToken ct)
+    {
+        await userService.CreateUserAsync(userDto, ct);
+
+        return NoContent();
+    }
+
+    /// <summary>
     /// Updates a user (basic info and roles).
-    /// Requires 'user.edit' permission.
+    /// Requires 'USER_EDIT' permission.
     /// </summary>
     /// <param name="id">The user ID.</param>
-    /// <param name="dto">The user update data.</param>
-    /// <returns>NoContent on success; exceptions handled globally.</returns>
+    /// <param name="userDto">The user update data.</param>
+    /// <param name="ct">Request cancellation token.</param>
+    /// <response code="204">No Content.</response>
     [HttpPut("{id}")]
-    [RequirePermission("user.edit")]
-    public async Task<IActionResult> UpdateUser(int id, UpdateUserDto dto)
+    [RequirePermission("USER_EDIT")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> UpdateUser(int id, UserDto userDto, CancellationToken ct)
     {
-        var cognitoId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "";
-        await userService.UpdateUserAsync(id, dto, cognitoId);
+        await userService.UpdateUserAsync(id, userDto, ct);
         return NoContent();
     }
 
     /// <summary>
-    /// Activates a user.
-    /// Requires 'user.deactivate' permission.
+    /// Activates or deactivates a user.
+    /// Requires 'USER_EDIT' permission.
     /// </summary>
     /// <param name="id">The user ID.</param>
-    /// <returns>NoContent on success; 404 if user not found.</returns>
-    [HttpPut("{id}/activate")]
-    [RequirePermission("user.deactivate")]
-    public async Task<IActionResult> ActivateUser(int id)
+    /// <param name="active">true to activate, false to deactivate.</param>
+    /// <param name="ct">Request cancellation token.</param>
+    /// <response code="204">No Content.</response>
+    [HttpPut("{id:int}/activation/{active:bool}")]
+    [RequirePermission("USER_EDIT")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> ActivateUser(int id, bool active, CancellationToken ct)
     {
-        await userService.ActivateUserAsync(id);
-        return NoContent();
-    }
-
-    /// <summary>
-    /// Deactivates a user.
-    /// Requires 'user.deactivate' permission.
-    /// </summary>
-    /// <param name="id">The user ID.</param>
-    /// <returns>NoContent on success; 404 if user not found.</returns>
-    [HttpDelete("{id}/deactivate")]
-    [RequirePermission("user.deactivate")]
-    public async Task<IActionResult> DeactivateUser(int id)
-    {
-        await userService.DeactivateUserAsync(id);
-        return NoContent();
-    }
-
-    /// <summary>
-    /// Assigns roles to a user.
-    /// Requires 'user.assign_role' permission.
-    /// </summary>
-    /// <param name="id">The user ID.</param>
-    /// <param name="roleIds">List of role IDs to assign.</param>
-    /// <returns>NoContent on success; exceptions handled globally.</returns>
-    [HttpPut("{id}/assign-roles")]
-    [RequirePermission("user.assign_role")]
-    public async Task<IActionResult> AssignRolesToUser(int id, [FromBody] List<int> roleIds)
-    {
-        var cognitoId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "";
-        await userService.AssignRolesAsync(id, roleIds, cognitoId);
+        await userService.ActivateUserAsync(id, active, ct);
         return NoContent();
     }
 }

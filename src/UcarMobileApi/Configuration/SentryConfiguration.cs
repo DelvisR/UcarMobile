@@ -2,8 +2,19 @@
 
 namespace UcarMobileApi.Configuration
 {
+    /// <summary>
+    /// Provides extension methods to configure Sentry for error monitoring and tracing.
+    /// </summary>
+    /// <remarks>
+    /// Adds and configures Sentry integration for capturing exceptions and performance metrics.
+    /// </remarks>
     public static class SentryConfiguration
     {
+        /// <summary>
+        /// Adds Sentry error monitoring services to the application.
+        /// </summary>
+        /// <param name="builder">The web application builder used to configure services and middleware.</param>
+        /// <returns>The updated web application builder.</returns>
         public static WebApplicationBuilder AddSentryConfiguration(this WebApplicationBuilder builder)
         {
             var dsn = builder.Configuration["Sentry:Dsn"];
@@ -16,7 +27,7 @@ namespace UcarMobileApi.Configuration
             }
 
             // Case 2: DSN has an invalid format -> Prevent crash at startup
-            if (!Uri.TryCreate(dsn, UriKind.Absolute, out var uri) || !dsn.Contains("@"))
+            if (!Uri.TryCreate(dsn, UriKind.Absolute, out var uri) || !dsn.Contains('@'))
             {
                 Log.Warning("⚠️ Sentry DSN format is invalid. Sentry will not be enabled. Falling back to Serilog only.");
                 return builder;

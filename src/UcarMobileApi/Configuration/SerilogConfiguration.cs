@@ -2,8 +2,19 @@
 
 namespace UcarMobileApi.Configuration
 {
+    /// <summary>
+    /// Provides extension methods to configure Serilog logging.
+    /// </summary>
+    /// <remarks>
+    /// Configures Serilog from application settings and integrates it with ASP.NET Core logging.
+    /// </remarks>
     public static class SerilogConfiguration
     {
+        /// <summary>
+        /// Adds and configures Serilog as the logging provider.
+        /// </summary>
+        /// <param name="builder">The web application builder used to configure logging.</param>
+        /// <returns>The updated web application builder.</returns>
         public static void AddSerilogConfiguration(this WebApplicationBuilder builder)
         {
             try

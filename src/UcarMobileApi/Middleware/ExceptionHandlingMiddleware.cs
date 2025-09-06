@@ -7,20 +7,24 @@ using UcarMobileApi.Core.Exceptions;
 
 namespace UcarMobileApi.Middleware
 {
-    public class ExceptionHandlingMiddleware
+    /// <summary>
+    /// Middleware that handles unhandled exceptions in the HTTP request pipeline.
+    /// </summary>
+    /// <remarks>
+    /// Captures exceptions, logs them, and returns standardized error responses to clients.
+    /// </remarks>
+    public class ExceptionHandlingMiddleware(RequestDelegate next)
     {
-        private readonly RequestDelegate _next;
-
-        public ExceptionHandlingMiddleware(RequestDelegate next)
-        {
-            _next = next;
-        }
-
+        /// <summary>
+        /// Processes the HTTP request and catches any unhandled exceptions.
+        /// </summary>
+        /// <param name="context">The HTTP context for the current request.</param>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         public async Task InvokeAsync(HttpContext context)
         {
             try
             {
-                await _next(context);
+                await next(context);
             }
             catch (Exception ex)
             {
@@ -126,8 +130,19 @@ namespace UcarMobileApi.Middleware
         }
     }
 
+    /// <summary>
+    /// Provides extension methods to configure the <see cref="ExceptionHandlingMiddleware"/>.
+    /// </summary>
+    /// <remarks>
+    /// Enables centralized exception handling in the request pipeline.
+    /// </remarks>
     public static class ExceptionHandlingMiddlewareExtensions
     {
+        /// <summary>
+        /// Adds the <see cref="ExceptionHandlingMiddleware"/> to the application's request pipeline.
+        /// </summary>
+        /// <param name="app">The application builder used to configure middleware.</param>
+        /// <returns>The updated application builder.</returns>
         public static IApplicationBuilder UseExceptionHandling(this IApplicationBuilder app)
         {
             return app.UseMiddleware<ExceptionHandlingMiddleware>();
