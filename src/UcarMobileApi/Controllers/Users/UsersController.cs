@@ -55,6 +55,7 @@ public class UsersController(UserService userService) : ControllerBase
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> CreateUser(UserDto userDto, CancellationToken ct)
     {
+        // var sub = User.FindFirstValue("sub");
         await userService.CreateUserAsync(userDto, ct);
 
         return NoContent();

@@ -21,9 +21,8 @@ packages/
 *.userprefs
 
 # Logs
-*.log
 src/UcarMobileApi/Logs/
-
+Logs/
 
 # Local settings
 appsettings.Local.json

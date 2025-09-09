@@ -9,7 +9,7 @@ public static class TestMapperFactory
     {
         var config = new MapperConfiguration(cfg =>
         {
-            cfg.AddProfile<UserMappingProfile>();
+            cfg.AddProfile<UserProfile>();
             // More profile
         });
         return config.CreateMapper();

@@ -15,10 +15,7 @@ public static class SettingsConfiguration
     /// <returns>The updated service collection.</returns>
     public static IServiceCollection AddAppSettings(this IServiceCollection services, IConfiguration configuration)
     {
-        services.AddOptions<AwsSettings>()
-            .Bind(configuration.GetSection("AWS"))
-            .ValidateDataAnnotations()
-            .ValidateOnStart();
+        services.AddOptions<AwsSettings>().Bind(configuration.GetSection("AWS")).ValidateDataAnnotations().ValidateOnStart();
 
         return services;
     }

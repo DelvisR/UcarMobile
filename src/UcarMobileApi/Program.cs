@@ -33,6 +33,8 @@ builder.Services.AddApplicationServices();
 // Authorization & Policies (Cognito + Dynamic Permissions)
 builder.Services.AddCognitoAuthAndPolicies(awsSettings);
 
+// Cors service
+builder.Services.AddCorsServices(builder.Configuration);
 
 builder.Services.AddAuthorizationServices();
 
@@ -63,6 +65,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseCorsConfiguration();
 
 app.UseAuthentication();
 app.UseAuthorization();

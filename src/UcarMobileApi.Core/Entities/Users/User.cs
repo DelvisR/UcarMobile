@@ -10,6 +10,8 @@ public class User : EntityBase
 
     public string LastName { get; set; } = string.Empty;
 
+    public string FullName => $"{FirstName} {LastName}";
+
     public string Email { get; set; } = string.Empty;
 
     public bool IsActive { get; set; } = true;

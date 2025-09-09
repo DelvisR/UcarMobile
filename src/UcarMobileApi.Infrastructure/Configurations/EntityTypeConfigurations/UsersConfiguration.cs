@@ -2,7 +2,7 @@
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using UcarMobileApi.Core.Entities.Users;
 
-namespace UcarMobileApi.Infrastructure.Configurations;
+namespace UcarMobileApi.Infrastructure.Configurations.EntityTypeConfigurations;
 
 // User entity configuration
 // By default, EF creates tables with the same name as the entity without pluralizing it.
@@ -18,7 +18,7 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(u => u.FirstName).HasMaxLength(50).IsRequired();
         builder.Property(u => u.LastName).HasMaxLength(50).IsRequired();
         builder.Property(u => u.Email).HasMaxLength(256).IsRequired();
-        builder.Property(u => u.CognitoId).HasMaxLength(256);
+        builder.Property(u => u.CognitoId).HasMaxLength(256).IsRequired();
         builder.Property(u => u.IsActive).IsRequired().HasDefaultValue(true);
     }
 }
