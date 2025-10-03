@@ -1,4 +1,4 @@
-﻿namespace UcarMobileApi.Infrastructure.Security
+namespace UcarMobileApi.Infrastructure.Security
 {
     public class RedisMemoryCache
     {

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading.Tasks;
 
 namespace UcarMobileApi.Application.Services.Security;
@@ -30,7 +30,6 @@ public class MemoryCacheService(IMemoryCache cache) : ICacheService
 
         return Task.CompletedTask;
     }
-
 
     public Task InvalidateAsync(string key)
     {

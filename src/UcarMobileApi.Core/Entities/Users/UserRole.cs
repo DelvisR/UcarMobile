@@ -1,4 +1,4 @@
-﻿namespace UcarMobileApi.Core.Entities.Users;
+namespace UcarMobileApi.Core.Entities.Users;
 
 public class UserRole : EntityBase
 {

@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using AutoMapper.EquivalencyExpression;
 using UcarMobileApi.Application.DTOs.Users;
 using UcarMobileApi.Core.Entities.Users;
@@ -9,20 +9,20 @@ public class RoleProfile : Profile
 {
     public RoleProfile()
     {
-        // Role <-> RoleDto (no Permissions)
+        // Role <-> RoleDto (no Actions)
         CreateMap<Role, RoleDto>();
         CreateMap<RoleDto, Role>()
             .EqualityComparison((dto, entity) => dto.Id == entity.Id)
-            .ForMember(dest => dest.RolePermissions, opt => opt.Ignore());
+            .ForMember(dest => dest.RoleActions, opt => opt.Ignore());
 
-        // Permission <-> PermissionDto
-        CreateMap<Permission, PermissionDto>();
-        CreateMap<PermissionDto, Permission>()
+        // Action <-> ActionDto
+        CreateMap<Action, ActionDto>();
+        CreateMap<ActionDto, Action>()
             .EqualityComparison((dto, entity) => dto.Id == entity.Id);
 
-        // PermissionDto -> RolePermission (join)
-        CreateMap<PermissionDto, RolePermission>()
-            .ConstructUsing(dto => new RolePermission { PermissionId = dto.Id })
-            .EqualityComparison((dto, entity) => dto.Id == entity.PermissionId);
+        // ActionDto -> RoleAction (join)
+        CreateMap<ActionDto, RoleAction>()
+            .ConstructUsing(dto => new RoleAction { ActionId = dto.Id })
+            .EqualityComparison((dto, entity) => dto.Id == entity.ActionId);
     }
 }

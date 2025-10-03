@@ -1,18 +1,18 @@
-﻿using FluentValidation;
-using Microsoft.EntityFrameworkCore;
 using System.Threading;
 using System.Threading.Tasks;
+using FluentValidation;
+using Microsoft.EntityFrameworkCore;
+using UcarMobileApi.Application.Common.Interfaces;
 using UcarMobileApi.Application.DTOs.Users;
 using UcarMobileApi.Core.Entities.Users;
-using UcarMobileApi.Infrastructure.Data;
 
 namespace UcarMobileApi.Application.Validators.Users;
 
 public class RoleValidator : AbstractValidator<RoleDto>
 {
-    private readonly AppDbContext _dbContext;
+    private readonly IAppDbContext _dbContext;
 
-    public RoleValidator(AppDbContext dbContext)
+    public RoleValidator(IAppDbContext dbContext)
     {
         _dbContext = dbContext;
 

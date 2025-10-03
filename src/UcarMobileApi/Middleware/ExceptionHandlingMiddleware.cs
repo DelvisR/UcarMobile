@@ -1,8 +1,8 @@
-﻿using FluentValidation;
-using Microsoft.EntityFrameworkCore;
-using Serilog;
 using System.Net;
 using System.Text.Json;
+using FluentValidation;
+using Microsoft.EntityFrameworkCore;
+using Serilog;
 using UcarMobileApi.Core.Exceptions;
 
 namespace UcarMobileApi.Middleware

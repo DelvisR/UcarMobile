@@ -1,3 +1,3 @@
-﻿namespace UcarMobileApi.Application;
+namespace UcarMobileApi.Application;
 
 public class ApplicationAssemblyMarker { }

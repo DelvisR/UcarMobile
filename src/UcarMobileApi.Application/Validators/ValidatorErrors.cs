@@ -1,4 +1,4 @@
-﻿namespace UcarMobileApi.Application.Validators;
+namespace UcarMobileApi.Application.Validators;
 
 public static class ValidatorErrors
 {

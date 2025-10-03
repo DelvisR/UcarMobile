@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 
 namespace UcarMobileApi.Core.Entities.Users;
 
@@ -10,5 +10,5 @@ public class Role : EntityBase
 
     // Navigation properties
     public virtual ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
-    public virtual ICollection<RolePermission> RolePermissions { get; set; } = new List<RolePermission>();
+    public virtual ICollection<RoleAction> RoleActions { get; set; } = new List<RoleAction>();
 }

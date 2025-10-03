@@ -1,5 +1,6 @@
 using UcarMobileApi.Configuration;
 using UcarMobileApi.Infrastructure.Configurations.Settings;
+using UcarMobileApi.Infrastructure.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,8 +22,12 @@ var awsSettings = builder.Configuration.GetSection("AWS").Get<AwsSettings>()!;
 // Register AWS Secrets Manager
 builder.Services.AddAwsSecretsManager(awsSettings);
 
-// Add DbContext
-builder.Services.AddAppDbContext(builder.Configuration);
+// Register DB connection factory and DbContext
+builder.Services.AddSingleton<IDbConnectionFactory, DbConnectionFactory>();
+builder.Services.AddAppDbContext();
+
+// Cognito Root User (our new method)
+builder.Services.AddCognitoRootUser(builder.Configuration, awsSettings);
 
 // Enable Memory Cache
 builder.Services.AddMemoryCache();
@@ -30,7 +35,10 @@ builder.Services.AddMemoryCache();
 // Add services
 builder.Services.AddApplicationServices();
 
-// Authorization & Policies (Cognito + Dynamic Permissions)
+// Add infraestructure services
+builder.Services.AddInfrastructure(awsSettings);
+
+// Authorization & Policies (Cognito + Dynamic Action)
 builder.Services.AddCognitoAuthAndPolicies(awsSettings);
 
 // Cors service
@@ -50,10 +58,13 @@ builder.Services.AddAutoMapperProfiles();
 // Configure FluentValidation
 builder.Services.AddFluentValidationConfig();
 
+// Configure basic security services such as rate limiting
+builder.Services.AddBasicSecurity();
+
 // Build app
 var app = builder.Build();
 
-// Aplicar migraciones de base de datos antes de recibir solicitudes
+// Apply database migrations before receiving requests
 await UcarMobileApi.Infrastructure.Data.DatabaseInitializer.InitializeAsync(app.Services);
 
 // Middleware pipeline
@@ -64,7 +75,13 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerDocumentation();
 }
 
-app.UseHttpsRedirection();
+// Basic Security Middleware (HSTS, headers, rate limiting)
+app.UseBasicSecurity(app.Environment);
+
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 
 app.UseCorsConfiguration();
 

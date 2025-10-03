@@ -1,4 +1,4 @@
-﻿namespace UcarMobileApi.Configuration;
+namespace UcarMobileApi.Configuration;
 
 /// <summary>
 /// Provides extension methods for configuring Cross-Origin Resource Sharing (CORS).

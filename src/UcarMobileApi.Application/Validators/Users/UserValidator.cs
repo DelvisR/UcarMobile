@@ -1,19 +1,18 @@
-﻿using FluentValidation;
-using Microsoft.EntityFrameworkCore;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using FluentValidation;
+using Microsoft.EntityFrameworkCore;
+using UcarMobileApi.Application.Common.Interfaces;
 using UcarMobileApi.Application.DTOs.Users;
 using UcarMobileApi.Core.Entities.Users;
-using UcarMobileApi.Infrastructure.Data;
 
 namespace UcarMobileApi.Application.Validators.Users;
 
-public abstract class UserValidatorBase<T> : AbstractValidator<T> where T : UserDto
+public class UserValidator<TUser> : AbstractValidator<TUser> where TUser : UserDto
 {
-    private readonly AppDbContext _dbContext;
+    private readonly IAppDbContext _dbContext;
 
-    protected UserValidatorBase(AppDbContext dbContext)
+    public UserValidator(IAppDbContext dbContext)
     {
         _dbContext = dbContext;
 
@@ -27,6 +26,10 @@ public abstract class UserValidatorBase<T> : AbstractValidator<T> where T : User
             .EmailAddress()
             .MustAsync(BeUniqueEmail).WithMessage(ValidatorErrors.Duplicated);
 
+        RuleFor(u => u.Phone)
+            .NotEmpty().WithMessage(ValidatorErrors.IsRequired)
+            .Matches(@"^\d{10}$").WithMessage("Phone must be exactly 10 digits");
+
         RuleFor(x => x.FirstName)
             .NotEmpty().WithMessage(ValidatorErrors.IsRequired)
             .MaximumLength(50).WithMessage(string.Format(ValidatorErrors.MaxLengthExceeded, 50));
@@ -35,9 +38,14 @@ public abstract class UserValidatorBase<T> : AbstractValidator<T> where T : User
             .NotEmpty().WithMessage(ValidatorErrors.IsRequired)
             .MaximumLength(50).WithMessage(string.Format(ValidatorErrors.MaxLengthExceeded, 50));
 
+        RuleFor(x => x.AuthProviderId)
+            .NotEmpty().WithMessage(ValidatorErrors.IsRequired)
+            .MaximumLength(256).WithMessage(string.Format(ValidatorErrors.MaxLengthExceeded, 256))
+            .MustAsync(BeUniqueAuthProviderId).WithMessage(ValidatorErrors.Duplicated);
+
         RuleFor(u => u.Roles)
-            .NotNull().WithMessage(ValidatorErrors.IsRequired)
-            .Must(r => r.Any()).WithMessage(ValidatorErrors.NoEmpty);
+            .Must(r => r == null || r.Count > 0)
+            .WithMessage(ValidatorErrors.NoEmpty);
 
         RuleForEach(u => u.Roles)
             .SetValidator(new RoleValidator(_dbContext));
@@ -50,24 +58,11 @@ public abstract class UserValidatorBase<T> : AbstractValidator<T> where T : User
             .AnyAsync(u => u.Email == email && u.Id != dto.Id, ct);
     }
 
-    protected async Task<bool> BeUniqueCognitoId(UserDto dto, string cognitoId, CancellationToken ct)
+    protected async Task<bool> BeUniqueAuthProviderId(UserDto dto, string authProviderId, CancellationToken ct)
     {
         return !await _dbContext.Set<User>()
             .AsNoTracking()
-            .AnyAsync(u => u.CognitoId == cognitoId && u.Id != dto.Id, ct);
-    }
-}
-
-public class CreateUserValidator(AppDbContext dbContext) : UserValidatorBase<UserDto>(dbContext);
-
-public class UpdateUserValidator : UserValidatorBase<UserDto>
-{
-    public UpdateUserValidator(AppDbContext dbContext) : base(dbContext)
-    {
-        RuleFor(x => x.CognitoId)
-            .NotEmpty().WithMessage(ValidatorErrors.IsRequired)
-            .MaximumLength(256).WithMessage(string.Format(ValidatorErrors.MaxLengthExceeded, 256))
-            .MustAsync(BeUniqueCognitoId).WithMessage(ValidatorErrors.Duplicated);
+            .AnyAsync(u => u.AuthProviderId == authProviderId && u.Id != dto.Id, ct);
     }
 }
 

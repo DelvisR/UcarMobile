@@ -1,22 +1,10 @@
-﻿using Amazon.SecretsManager.Extensions.Caching;
-using Microsoft.Extensions.Logging;
 using System;
 using System.Threading.Tasks;
+using Amazon.SecretsManager.Extensions.Caching;
+using Microsoft.Extensions.Logging;
+using UcarMobileApi.Application.Common.Interfaces;
 
 namespace UcarMobileApi.Infrastructure.Services;
-
-/// <summary>
-/// Interface for retrieving secrets from AWS Secrets Manager
-/// </summary>
-public interface ISecretProvider
-{
-    /// <summary>
-    /// Retrieves a secret value by its name from AWS Secrets Manager
-    /// </summary>
-    /// <param name="secretName">The name of the secret to retrieve</param>
-    /// <returns>The secret value if found, null otherwise</returns>
-    Task<string?> GetSecretAsync(string secretName);
-}
 
 /// <summary>
 /// Service for retrieving secrets from AWS Secrets Manager with caching and comprehensive error handling

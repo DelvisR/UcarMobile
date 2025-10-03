@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using UcarMobileApi.Application.Mapping.Users;
 
 namespace UcarMobileApi.Tests.TestHelpers;

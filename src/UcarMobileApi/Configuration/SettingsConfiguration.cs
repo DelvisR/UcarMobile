@@ -1,4 +1,4 @@
-﻿using UcarMobileApi.Infrastructure.Configurations.Settings;
+using UcarMobileApi.Infrastructure.Configurations.Settings;
 
 namespace UcarMobileApi.Configuration;
 

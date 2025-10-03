@@ -1,11 +1,12 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using UcarMobileApi.Application.Common.Interfaces;
 using UcarMobileApi.Infrastructure.Configurations.EntityTypeConfigurations;
 using UcarMobileApi.Infrastructure.Interceptors;
 
 namespace UcarMobileApi.Infrastructure.Data;
 
-public class AppDbContext(DbContextOptions<AppDbContext> options, IHttpContextAccessor httpContextAccessor) : DbContext(options)
+public class AppDbContext(DbContextOptions<AppDbContext> options, IHttpContextAccessor httpContextAccessor) : DbContext(options), IAppDbContext
 {
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         => optionsBuilder.AddInterceptors(new AuditInterceptor(httpContextAccessor));

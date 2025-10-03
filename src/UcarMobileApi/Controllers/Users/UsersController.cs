@@ -11,32 +11,32 @@ namespace UcarMobileApi.Controllers.Users;
 /// You do not need to specify it.
 /// </summary>
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/users")]
 public class UsersController(UserService userService) : ControllerBase
 {
     /// <summary>
     /// Gets all users.
-    /// Requires 'USER_VIEW' permission.
+    /// Requires 'ACTION_VIEW_MAIN_MENU_USERS' action.
     /// </summary>
     /// <param name="ct">Request cancellation token.</param>
     /// <response code="200">Returns the list of users.</response>
     /// <response code="401">User not authorized.</response>
-    /// <response code="403">User does not have permission.</response>
+    /// <response code="403">User does not have action.</response>
     [HttpGet]
-    [RequirePermission("USER_VIEW")]
+    [RequireAction("ACTION_VIEW_MAIN_MENU_USERS")]
     public async Task<ActionResult<IEnumerable<UserDto>>> GetUsers(CancellationToken ct)
         => Ok(await userService.GetUsersAsync(ct));
 
     /// <summary>
     /// Gets a specific user by ID.
-    /// Requires 'USER_VIEW' permission.
+    /// Requires 'ACTION_VIEW_MAIN_MENU_USERS' action.
     /// </summary>
     /// <param name="id">The user ID.</param>
     /// <param name="ct">Request cancellation token.</param>
     /// <response code="200">UserDto if found.</response>
     /// <response code="404">NotFound otherwise.</response>
     [HttpGet("{id:int}")]
-    [RequirePermission("USER_VIEW")]
+    [RequireAction("ACTION_VIEW_MAIN_MENU_USERS")]
     public async Task<ActionResult<UserDto>> GetUser(int id, CancellationToken ct)
     {
         var user = await userService.GetUserAsync(id, ct);
@@ -45,32 +45,32 @@ public class UsersController(UserService userService) : ControllerBase
 
     /// <summary>
     /// Creates a new user (basic info and roles).
-    /// Requires 'USER_CREATE' permission.
+    /// Requires 'ACTION_CREATE_USER' action.
     /// </summary>
     /// <param name="userDto">The user data.</param>
     /// <param name="ct">Request cancellation token.</param>
     /// <response code="204">No Content.</response>
     [HttpPost]
-    [RequirePermission("USER_CREATE")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [RequireAction("ACTION_CREATE_USER")]
+    [ProducesResponseType(StatusCodes.Status201Created)]
     public async Task<IActionResult> CreateUser(UserDto userDto, CancellationToken ct)
     {
         // var sub = User.FindFirstValue("sub");
         await userService.CreateUserAsync(userDto, ct);
 
-        return NoContent();
+        return Created();
     }
 
     /// <summary>
     /// Updates a user (basic info and roles).
-    /// Requires 'USER_EDIT' permission.
+    /// Requires 'ACTION_EDIT_USER' action.
     /// </summary>
     /// <param name="id">The user ID.</param>
     /// <param name="userDto">The user update data.</param>
     /// <param name="ct">Request cancellation token.</param>
     /// <response code="204">No Content.</response>
     [HttpPut("{id}")]
-    [RequirePermission("USER_EDIT")]
+    [RequireAction("ACTION_EDIT_USER")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> UpdateUser(int id, UserDto userDto, CancellationToken ct)
     {
@@ -80,14 +80,14 @@ public class UsersController(UserService userService) : ControllerBase
 
     /// <summary>
     /// Activates or deactivates a user.
-    /// Requires 'USER_EDIT' permission.
+    /// Requires 'ACTION_EDIT_USER' action.
     /// </summary>
     /// <param name="id">The user ID.</param>
     /// <param name="active">true to activate, false to deactivate.</param>
     /// <param name="ct">Request cancellation token.</param>
     /// <response code="204">No Content.</response>
     [HttpPut("{id:int}/activation/{active:bool}")]
-    [RequirePermission("USER_EDIT")]
+    [RequireAction("ACTION_EDIT_USER")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> ActivateUser(int id, bool active, CancellationToken ct)
     {

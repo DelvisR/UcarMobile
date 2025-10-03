@@ -1,4 +1,4 @@
-﻿namespace UcarMobileApi.Application.Services;
+namespace UcarMobileApi.Application.Services;
 
 // Marker class, used only for assembly scanning.
 // No logic inside.

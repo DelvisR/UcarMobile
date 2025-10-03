@@ -12,33 +12,33 @@ namespace UcarMobileApi.Controllers.Users;
 /// You do not need to specify it.
 /// </summary>
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/roles")]
 [Authorize]
 public class RolesController(RoleService roleService) : ControllerBase
 {
     /// <summary>
     /// Gets all roles.
-    /// Requires 'ROLE_VIEW' permission.
+    /// Requires 'ACTION_VIEW_MAIN_MENU_ROLES' action.
     /// </summary>
     /// <param name="ct">Request cancellation token.</param>
     /// <response code="200">Returns the list of roles.</response>
     /// <response code="401">User not authorized.</response>
-    /// <response code="403">User does not have permission.</response>
+    /// <response code="403">User does not have action.</response>
     [HttpGet]
-    [RequirePermission("ROLE_VIEW")]
+    [RequireAction("ACTION_VIEW_MAIN_MENU_ROLES")]
     public async Task<ActionResult<IEnumerable<RoleDto>>> GetRoles(CancellationToken ct)
         => Ok(await roleService.GetRolesAsync(ct));
 
     /// <summary>
     /// Gets a role by ID.
-    /// Requires 'ROLE_VIEW' permission.
+    /// Requires 'ACTION_VIEW_MAIN_MENU_ROLES' action.
     /// </summary>
     /// <param name="id">The role ID.</param>
     /// <param name="ct">Request cancellation token.</param>
     /// <response code="200">RoleDto if found.</response>
     /// <response code="404">NotFound otherwise.</response>
     [HttpGet("{id:int}")]
-    [RequirePermission("ROLE_VIEW")]
+    [RequireAction("ACTION_VIEW_MAIN_MENU_ROLES")]
     public async Task<ActionResult<RoleDto>> GetRole(int id, CancellationToken ct)
     {
         var role = await roleService.GetRoleAsync(id, ct);
@@ -47,31 +47,31 @@ public class RolesController(RoleService roleService) : ControllerBase
 
     /// <summary>
     /// Creates a new role.
-    /// Requires 'ROLE_CREATE' permission.
+    /// Requires 'ACTION_CREATE_ROLE' action.
     /// </summary>
     /// <param name="dto">The role data.</param>
     /// <param name="ct">Request cancellation token.</param>
     /// <response code="204">No Content.</response>
     [HttpPost]
-    [RequirePermission("ROLE_CREATE")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [RequireAction("ACTION_CREATE_ROLE")]
+    [ProducesResponseType(StatusCodes.Status201Created)]
     public async Task<ActionResult<RoleDto>> CreateRole(RoleDto dto, CancellationToken ct)
     {
         await roleService.CreateRoleAsync(dto, ct);
 
-        return NoContent();
+        return Created();
     }
 
     /// <summary>
     /// Updates an existing role.
-    /// Requires 'ROLE_EDIT' permission.
+    /// Requires 'ACTION_EDIT_ROLE' action.
     /// </summary>
     /// <param name="id">The role ID.</param>
     /// <param name="dto">The role update data.</param>
     /// <param name="ct">Request cancellation token.</param>
     /// <response code="204">No Content.</response>
     [HttpPut("{id:int}")]
-    [RequirePermission("ROLE_EDIT")]
+    [RequireAction("ACTION_EDIT_ROLE")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> UpdateRole(int id, RoleDto dto, CancellationToken ct)
     {
@@ -81,13 +81,13 @@ public class RolesController(RoleService roleService) : ControllerBase
 
     /// <summary>
     /// Deletes a role.
-    /// Requires 'ROLE_DELETE' permission.
+    /// Requires 'ACTION_DELETE_ROLE' action.
     /// </summary>
     /// <param name="id">The role ID.</param>
     /// <param name="ct">Request cancellation token.</param>
     /// <response code="204">No Content.</response>
     [HttpDelete("{id:int}")]
-    [RequirePermission("ROLE_DELETE")]
+    [RequireAction("ACTION_DELETE_ROLE")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> DeleteRole(int id, CancellationToken ct)
     {
@@ -96,19 +96,19 @@ public class RolesController(RoleService roleService) : ControllerBase
     }
 
     /// <summary>
-    /// Assigns permissions to a role.
-    /// Requires 'ROLE_ASSIGN_PERMISSION' permission.
+    /// Assigns actions to a role.
+    /// Requires 'ACTION_EDIT_ROLE' action.
     /// </summary>
     /// <param name="id">The role ID.</param>
-    /// <param name="permissions">List of PermissionDto.</param>
+    /// <param name="actions">List of ActionDto.</param>
     /// <param name="ct">Request cancellation token.</param>
     /// <response code="204">No Content.</response>
-    [HttpPut("{id:int}/assign-permissions")]
-    [RequirePermission("ROLE_ASSIGN_PERMISSION")]
+    [HttpPut("{id:int}/assign-actions")]
+    [RequireAction("ACTION_EDIT_ROLE")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public async Task<IActionResult> AssignPermissions(int id, [FromBody] List<PermissionDto> permissions, CancellationToken ct)
+    public async Task<IActionResult> AssignActions(int id, [FromBody] List<ActionDto> actions, CancellationToken ct)
     {
-        await roleService.AssignPermissionsAsync(id, permissions, ct);
+        await roleService.AssignActionsAsync(id, actions, ct);
         return NoContent();
     }
 }

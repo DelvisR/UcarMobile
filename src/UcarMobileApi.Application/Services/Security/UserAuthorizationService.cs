@@ -1,87 +1,122 @@
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using AutoMapper;
+using AutoMapper.QueryableExtensions;
+using Microsoft.EntityFrameworkCore;
+using UcarMobileApi.Application.Common;
+using UcarMobileApi.Application.Common.Interfaces;
+using UcarMobileApi.Application.DTOs.Users;
 using UcarMobileApi.Core.Entities.Users;
-using UcarMobileApi.Infrastructure.Data;
 
 namespace UcarMobileApi.Application.Services.Security;
 
-public class UserAuthorizationService(AppDbContext context, IConfiguration configuration, ICacheService cache) : IUserAuthorizationService
+/// <summary>
+/// Provides methods to check user actions, roles and retrieve authorization data.
+/// </summary>
+public class UserAuthorizationService(IAppDbContext context, CognitoRootUserOptions cognitoRoot, ICacheService cache, IMapper mapper) : IUserAuthorizationService
 {
+    // Sliding expiration for cached actions
     private static readonly TimeSpan CacheSlidingExpiration = TimeSpan.FromMinutes(30);
 
     /// <summary>
-    /// Checks if a user has a specific permission.
+    /// Checks if a user has a specific action by its name.
     /// </summary>
-    public async Task<bool> HasPermissionAsync(string cognitoId, string permission, CancellationToken ct)
+    public async Task<bool> HasActionAsync(string authProviderId, string action, CancellationToken ct)
     {
-        var permissions = await GetUserPermissionsAsync(cognitoId, ct);
-        return permissions.Contains(permission);
+        var actions = await GetUserActionsAsync(authProviderId, ct);
+        return actions.Any(p => p.Name == action);
     }
 
     /// <summary>
-    /// Checks if a user has multiple permissions at once.
+    /// Returns only the actions (from the requested list) that the user actually has.
     /// </summary>
-    /// <param name="cognitoId">User's Cognito ID.</param>
-    /// <param name="permissionsToCheck">List of permissions to validate.</param>
+    /// <param name="authProviderId">User's Cognito ID.</param>
+    /// <param name="actionsToCheck">List of actions to validate.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>A dictionary where the key is the permission and the value indicates if the user has it.</returns>
-    public async Task<Dictionary<string, bool>> HasPermissionsAsync(string cognitoId, IEnumerable<string> permissionsToCheck, CancellationToken ct)
+    /// <returns>A list of action names the user has (empty list if none).</returns>
+    public async Task<IReadOnlyList<string>> GetUserActionsFromListAsync(string authProviderId, IEnumerable<string> actionsToCheck, CancellationToken ct)
     {
-        var userPermissions = await GetUserPermissionsAsync(cognitoId, ct);
+        // Get all actions assigned to this user
+        var userActions = await GetUserActionsAsync(authProviderId, ct);
 
-        // HashSet is faster for lookups than List.Contains()
-        var permissionSet = new HashSet<string>(userPermissions);
+        // Convert to HashSet for fast lookup (by action name)
+        var actionSet = new HashSet<string>(userActions.Select(p => p.Name));
 
-        return permissionsToCheck
-            .Distinct() // avoid duplicates in the request
-            .ToDictionary(
-                p => p,
-                p => permissionSet.Contains(p)
-            );
+        // Filter only the ones the user has
+        var matchingActions = actionsToCheck
+            .Distinct() // avoid duplicates
+            .Where(p => actionSet.Contains(p))
+            .ToList();
+
+        return matchingActions;
     }
 
-
     /// <summary>
-    /// Retrieves and caches all permissions for a user from the database.
+    /// Retrieves and caches all actions for a user from the database, including resource.
     /// </summary>
-    public async Task<List<string>> GetUserPermissionsAsync(string cognitoId, CancellationToken ct)
+    /// <param name="authProviderId">User's Cognito ID.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>A list of UserActionDto (Name + Resource).</returns>
+    public async Task<List<UserActionDto>> GetUserActionsAsync(string authProviderId, CancellationToken ct)
     {
-        var cacheKey = $"user_permissions:{cognitoId}";
+        // Change cache key to v2 to avoid conflicts with old cache
+        var cacheKey = $"user_actions_v2:{authProviderId}";
 
         // Check cache first
-        var cached = await cache.GetAsync<List<string>>(cacheKey);
+        var cached = await cache.GetAsync<List<UserActionDto>>(cacheKey);
         if (cached is not null)
             return cached;
 
-        // Load permissions directly from the database (project only strings)
-        var permissions = await context.Set<User>()
+        // Load actions directly from the database (project Name + Resource)
+        var actions = await context.Set<User>()
             .AsNoTracking()
-            .Where(u => u.CognitoId == cognitoId && u.IsActive)
+            .Where(u => u.AuthProviderId == authProviderId && u.IsActive)
             .SelectMany(u => u.UserRoles)
-            .SelectMany(ur => ur.Role.RolePermissions)
-            .Select(rp => rp.Permission.Name)
-            .Distinct()
+            .SelectMany(ur => ur.Role.RoleActions)
+            .Select(rp => new UserActionDto(
+                rp.Action.Name,
+                rp.Action.Resource))
+            .Distinct() // optional: distinct on Name+Resource
             .ToListAsync(ct);
 
         // Save to cache (even empty lists if the user does not exist)
-        await cache.SetAsync(cacheKey, permissions, null, CacheSlidingExpiration);
+        await cache.SetAsync(cacheKey, actions, null, CacheSlidingExpiration);
 
-        return permissions;
+        return actions;
     }
+
+    /// <summary>
+    /// Gets all action names assigned to a user for a given resource.
+    /// </summary>
+    /// <param name="authProviderId">User's Cognito ID.</param>
+    /// <param name="resource">Action resource to filter by.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>List of action names in the specified resource.</returns>
+    public async Task<List<string>> GetUserActionsByResourceAsync(string authProviderId, string resource, CancellationToken ct)
+    {
+        var userActions = await GetUserActionsAsync(authProviderId, ct);
+
+        return
+        [
+            ..userActions
+                .Where(p => string.Equals(p.Resource, resource, StringComparison.OrdinalIgnoreCase))
+                .Select(p => p.Name)
+                .Distinct()
+        ];
+    }
+
 
     /// <summary>
     /// Gets all roles for a given user.
     /// </summary>
-    public async Task<List<string>> GetUserRolesAsync(string cognitoId, CancellationToken ct)
+    public async Task<List<string>> GetUserRolesAsync(string authProviderId, CancellationToken ct)
     {
         return await context.Set<User>()
             .AsNoTracking()
-            .Where(u => u.CognitoId == cognitoId)
+            .Where(u => u.AuthProviderId == authProviderId)
             .SelectMany(u => u.UserRoles)
             .Select(ur => ur.Role.Name)
             .Distinct()
@@ -89,23 +124,23 @@ public class UserAuthorizationService(AppDbContext context, IConfiguration confi
     }
 
     /// <summary>
-    /// Checks if the user is the system user.
+    /// Checks if the user is the system user (Cognito root user).
     /// </summary>
-    public bool IsSystemUser(string cognitoId)
+    public bool IsSystemUser(string authProviderId)
     {
-        var systemUserCognitoId = configuration["SystemUser:CognitoId"];
-        return !string.IsNullOrEmpty(systemUserCognitoId) && cognitoId == systemUserCognitoId;
+        var systemUserAuthProviderId = cognitoRoot.UserRootCognitoId;
+        return !string.IsNullOrEmpty(systemUserAuthProviderId) && authProviderId == systemUserAuthProviderId;
     }
 
     /// <summary>
-    /// Gets user by Cognito ID.
+    /// Gets a user by Cognito ID including roles.
     /// </summary>
-    public async Task<User?> GetUserByCognitoIdAsync(string cognitoId, CancellationToken ct)
+    public async Task<UserDto?> GetUserByAuthProviderIdAsync(string authProviderId, CancellationToken ct)
     {
         return await context.Set<User>()
             .AsNoTracking()
-            .Include(u => u.UserRoles)
-            .ThenInclude(ur => ur.Role)
-            .FirstOrDefaultAsync(u => u.CognitoId == cognitoId, ct);
+            .Where(u => u.AuthProviderId == authProviderId)
+            .ProjectTo<CurrentUserDto>(mapper.ConfigurationProvider)
+            .FirstOrDefaultAsync(ct);
     }
 }

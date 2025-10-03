@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading.Tasks;
 using UcarMobileApi.Core.Entities.Users;
 using UcarMobileApi.Tests.TestHelpers;

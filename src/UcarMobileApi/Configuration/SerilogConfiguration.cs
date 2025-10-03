@@ -1,4 +1,4 @@
-﻿using Serilog;
+using Serilog;
 
 namespace UcarMobileApi.Configuration
 {
@@ -27,7 +27,7 @@ namespace UcarMobileApi.Configuration
 
                 builder.Host.UseSerilog();
 
-                Log.Information("✅ Serilog initialized from appsettings.json.");
+                Log.Information("Serilog initialized from appsettings.json.");
             }
             catch (Exception ex)
             {

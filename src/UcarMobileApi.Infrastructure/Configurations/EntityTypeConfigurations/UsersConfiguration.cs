@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using UcarMobileApi.Core.Entities.Users;
 
@@ -12,14 +12,19 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
     {
         builder.ToTable("UserAccount"); // Rename because “User” is a reserved word in PostgreSQL
 
-        builder.HasIndex(u => u.CognitoId).IsUnique();
+        // Primary key (in User)
+        builder.HasKey(u => u.Id);
+
+        builder.HasIndex(u => u.AuthProviderId).IsUnique();
         builder.HasIndex(u => u.Email).IsUnique();
 
         builder.Property(u => u.FirstName).HasMaxLength(50).IsRequired();
         builder.Property(u => u.LastName).HasMaxLength(50).IsRequired();
         builder.Property(u => u.Email).HasMaxLength(256).IsRequired();
-        builder.Property(u => u.CognitoId).HasMaxLength(256).IsRequired();
-        builder.Property(u => u.IsActive).IsRequired().HasDefaultValue(true);
+        builder.Property(x => x.Phone).HasMaxLength(10).IsRequired();
+        builder.Property(u => u.AuthProviderId).HasMaxLength(256).IsRequired();
+        builder.Property(x => x.LangKey).HasMaxLength(6).HasDefaultValue("en");
+        builder.Property(u => u.IsActive).IsRequired().HasDefaultValue(false);
     }
 }
 
@@ -35,15 +40,16 @@ public class RoleConfiguration : IEntityTypeConfiguration<Role>
     }
 }
 
-// Permission entity configuration
-public class PermissionConfiguration : IEntityTypeConfiguration<Permission>
+// Action entity configuration
+public class ActionConfiguration : IEntityTypeConfiguration<Action>
 {
-    public void Configure(EntityTypeBuilder<Permission> builder)
+    public void Configure(EntityTypeBuilder<Action> builder)
     {
         builder.HasIndex(p => p.Name).IsUnique();
 
         builder.Property(p => p.Name).HasMaxLength(100).IsRequired();
         builder.Property(p => p.Description).HasMaxLength(256);
+        builder.Property(p => p.Resource).HasMaxLength(50).IsRequired().HasDefaultValue("RESOURCE_DEFAULT");
     }
 }
 
@@ -57,12 +63,12 @@ public class UserRoleConfiguration : IEntityTypeConfiguration<UserRole>
     }
 }
 
-// RolePermission entity configuration (many-to-many between Role and Permission)
-public class RolePermissionConfiguration : IEntityTypeConfiguration<RolePermission>
+// RoleAction entity configuration (many-to-many between Role and Action)
+public class RoleActionConfiguration : IEntityTypeConfiguration<RoleAction>
 {
-    public void Configure(EntityTypeBuilder<RolePermission> builder)
+    public void Configure(EntityTypeBuilder<RoleAction> builder)
     {
-        builder.HasOne(rp => rp.Role).WithMany(r => r.RolePermissions).HasForeignKey(rp => rp.RoleId).OnDelete(DeleteBehavior.Cascade);
-        builder.HasOne(rp => rp.Permission).WithMany(p => p.RolePermissions).HasForeignKey(rp => rp.PermissionId).OnDelete(DeleteBehavior.Cascade);
+        builder.HasOne(rp => rp.Role).WithMany(r => r.RoleActions).HasForeignKey(rp => rp.RoleId).OnDelete(DeleteBehavior.Cascade);
+        builder.HasOne(rp => rp.Action).WithMany(p => p.RoleActions).HasForeignKey(rp => rp.ActionId).OnDelete(DeleteBehavior.Cascade);
     }
 }

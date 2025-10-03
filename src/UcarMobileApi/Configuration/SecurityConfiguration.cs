@@ -1,8 +1,8 @@
+using System.IdentityModel.Tokens.Jwt;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
-using System.IdentityModel.Tokens.Jwt;
 using UcarMobileApi.Infrastructure.Configurations.Settings;
 
 namespace UcarMobileApi.Configuration;
@@ -48,10 +48,15 @@ public static class SecurityConfiguration
                 {
                     ValidateIssuer = true,
                     ValidIssuer = authority,
-                    ValidateAudience = true,
-                    ValidAudience = clientId,
+                    // Access Token does not have “aud,” so we disable it:
+                    ValidateAudience = false,
+                    // If you use ID Token, set ValidateAudience = true and ValidAudience = clientId
+                    // ValidAudience = clientId,
                     ValidateLifetime = true,
-                    ClockSkew = TimeSpan.FromMinutes(awsSettings.Cognito.ClockSkewMinutes)
+                    ClockSkew = TimeSpan.FromMinutes(awsSettings.Cognito.ClockSkewMinutes),
+                    // Map the token's “sub” to NameIdentifier
+                    NameClaimType = "sub",
+                    RoleClaimType = "cognito:groups" // optional, if roles are required from Cognito
                 };
 
                 options.Events = new JwtBearerEvents

@@ -1,6 +1,6 @@
-﻿using FluentValidation;
-using Moq;
 using System.Threading;
+using FluentValidation;
+using Moq;
 using UcarMobileApi.Application.DTOs.Users;
 
 namespace UcarMobileApi.Tests.TestHelpers;

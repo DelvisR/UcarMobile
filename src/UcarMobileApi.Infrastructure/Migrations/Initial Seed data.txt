@@ -1,0 +1,207 @@
+
+            AddSeedData(migrationBuilder);
+        }
+
+        private static void AddSeedData(MigrationBuilder migrationBuilder)
+        {
+            // seed data
+
+            migrationBuilder.InsertData(
+                table: "Role",
+                columns: ["Id", "Name", "Description", "CreatedBy", "CreatedDate", "LastModifiedBy", "LastModifiedDate", "IsDeleted"],
+                values: new object[,]
+                {
+            {
+                1, "SuperAdmin",
+                "Has full control over the platform. Can manage all users (add, modify, delete, deactivate, assign roles), supervise analytics, reports, audit logs, system configurations, and can add other admins.",
+                "system", DateTime.UtcNow, "system", DateTime.UtcNow, false
+            },
+            {
+                2, "Admin",
+                "Almost all capabilities of SuperAdmin except adding new admins. Manages users, schedules, jobs, service zones, payments, etc.",
+                "system", DateTime.UtcNow, "system", DateTime.UtcNow, false
+            },
+            {
+                3, "Technician",
+                "Base role for all technicians. Common actions: view appointments, parts, notes, notifications, use mobile app.",
+                "system", DateTime.UtcNow, "system", DateTime.UtcNow, false
+            },
+            {
+                4, "TechnicianInHouse",
+                "Fixed-schedule contractors assigned jobs by administration. Can request days off. Full mobile app access to manage appointments, parts, notes, etc. Paid weekly/monthly.",
+                "system", DateTime.UtcNow, "system", DateTime.UtcNow, false
+            },
+            {
+                5, "TechnicianFreelancer",
+                "Contractors with flexible availability, accept/reject jobs. Manage workflow in mobile app. Paid based on commissions.",
+                "system", DateTime.UtcNow, "system", DateTime.UtcNow, false
+            },
+            {
+                6, "Client",
+                "Schedules, cancels or reschedules appointments, receives updates, notifications, invoices, can view service history, rate technicians, communicate with them or the call center, manage profile and registered vehicles.",
+                "system", DateTime.UtcNow, "system", DateTime.UtcNow, false
+            },
+            {
+                7, "FleetOwner",
+                "Specialized client managing multiple vehicles. Can schedule appointments for several vehicles, add/manage users/managers in the account, receives centralized billing.",
+                "system", DateTime.UtcNow, "system", DateTime.UtcNow, false
+            },
+            {
+                8, "FleetManager",
+                "Delegated by Fleet Owner. Can schedule, reschedule, cancel appointments, add notes or updates to appointments on behalf of Fleet Owner.",
+                "system", DateTime.UtcNow, "system", DateTime.UtcNow, false
+            }
+                });
+
+            // Insert existing actions with default category "RESOURCE_DEFAULT"
+            migrationBuilder.InsertData(
+                table: "Action",
+                columns:
+                [
+                    "Name", "Description", "Resource", "CreatedBy", "CreatedDate", "LastModifiedBy", "LastModifiedDate", "IsDeleted"
+                ],
+                values: new object[,]
+                {
+                    {
+                        "ACTION_CREATE_USER", "Allows creating new users", "RESOURCE_DEFAULT", "System", DateTime.UtcNow,
+                        "System", DateTime.UtcNow, false
+                    },
+                    {
+                        "ACTION_EDIT_USER", "Allows editing existing users", "RESOURCE_DEFAULT", "System", DateTime.UtcNow,
+                        "System", DateTime.UtcNow, false
+                    },
+                    {
+                        "ACTION_CREATE_CLIENT", "Allows creating new clients", "RESOURCE_DEFAULT", "System", DateTime.UtcNow,
+                        "System", DateTime.UtcNow, false
+                    },
+                    {
+                        "ACTION_EDIT_CLIENT", "Allows editing existing clients", "RESOURCE_DEFAULT", "System", DateTime.UtcNow,
+                        "System", DateTime.UtcNow, false
+                    },
+                    {
+                        "ACTION_CREATE_ROLE", "Allows creating new roles", "RESOURCE_DEFAULT", "System", DateTime.UtcNow,
+                        "System", DateTime.UtcNow, false
+                    },
+                    {
+                        "ACTION_EDIT_ROLE", "Allows editing existing roles", "RESOURCE_DEFAULT", "System", DateTime.UtcNow,
+                        "System", DateTime.UtcNow, false
+                    },
+                    {
+                        "ACTION_DELETE_ROLE", "Allows deleting roles", "RESOURCE_DEFAULT", "System", DateTime.UtcNow, "System",
+                        DateTime.UtcNow, false
+                    },
+                    {
+                        "ACTION_EDIT_BUSINESS_PARAMETER", "Allows edit existing business parameter", "RESOURCE_DEFAULT",
+                        "System", DateTime.UtcNow, "System", DateTime.UtcNow, false
+                    },
+                });
+
+            // Insert new actions with category "RESOURCE_MAIN_MENU"
+            migrationBuilder.InsertData(
+                table: "Action",
+                columns:
+                [
+                    "Name", "Description", "Resource", "CreatedBy", "CreatedDate", "LastModifiedBy", "LastModifiedDate",
+                    "IsDeleted"
+                ],
+                values: new object[,]
+                {
+                    {
+                        "ACTION_MANAGE_ROLE_RESOURCE_AND_ACTIONS", "Admin menu action", "RESOURCE_MAIN_MENU", "System",
+                        DateTime.UtcNow, "System", DateTime.UtcNow, false
+                    },
+                    {
+                        "ACTION_VIEW_MAIN_MENU_DASHBOARD", "Dashboard menu action", "RESOURCE_MAIN_MENU", "System",
+                        DateTime.UtcNow, "System", DateTime.UtcNow, false
+                    },
+                    {
+                        "ACTION_VIEW_MAIN_MENU_ESTIMATE", "Estimate menu action", "RESOURCE_MAIN_MENU", "System",
+                        DateTime.UtcNow, "System", DateTime.UtcNow, false
+                    },
+                    {
+                        "ACTION_VIEW_MAIN_MENU_USERS", "Users menu action", "RESOURCE_MAIN_MENU", "System",
+                        DateTime.UtcNow, "System", DateTime.UtcNow, false
+                    },
+                    {
+                        "ACTION_VIEW_MAIN_MENU_CLIENTS", "Clients menu action", "RESOURCE_MAIN_MENU", "System",
+                        DateTime.UtcNow, "System", DateTime.UtcNow, false
+                    },
+                    {
+                        "ACTION_VIEW_MAIN_MENU_ROLES", "Roles menu action", "RESOURCE_MAIN_MENU", "System",
+                        DateTime.UtcNow, "System", DateTime.UtcNow, false
+                    },
+                    {
+                        "ACTION_VIEW_MAIN_MENU_BUSINESS_PARAMETER", "Bussiness parameters menu action", "RESOURCE_MAIN_MENU", "System",
+                        DateTime.UtcNow, "System", DateTime.UtcNow, false
+                    },
+                });
+
+            // Insert default values
+            migrationBuilder.InsertData(
+                table: "BusinessParameter",
+                columns:
+                [
+                    "Key", "Value", "ValueType", "Description", "CreatedBy", "CreatedDate", "LastModifiedBy",
+                    "LastModifiedDate", "IsDeleted"
+                ],
+                values: new object[,]
+                {
+                    {
+                        "DefaultClientRoles", "6", "string", "Default Role for new Client", "system", DateTime.UtcNow,
+                        "system", DateTime.UtcNow, false
+                    }
+                });
+
+            migrationBuilder.InsertData(
+                table: "UserAccount",
+                columns:
+                [
+                    "Id", "Email", "Phone", "FirstName", "LastName", "LangKey", "IsActive", "AuthProviderId",
+                    "CreatedBy", "CreatedDate", "LastModifiedBy", "LastModifiedDate", "IsDeleted"
+                ],
+                values: new object[,]
+                {
+                    {
+                        1, "system@ucarmobile.com", "0000000000", "System", "Root", "en", true,
+                        Guid.NewGuid().ToString(),
+                        "system", DateTime.UtcNow, "system", DateTime.UtcNow, false
+                    },
+                    {
+                        2, "admin@ucarmobile.com", "1111111111", "Super", "Admin", "en", true,
+                        "143884b8-b0a1-702e-1a8f-547574f2ed9c",
+                        "system", DateTime.UtcNow, "system", DateTime.UtcNow, false
+                    }
+                });
+
+            migrationBuilder.InsertData(
+                table: "UserRole",
+                columns:
+                [
+                    "UserId", "RoleId", "CreatedBy", "CreatedDate", "LastModifiedBy", "LastModifiedDate", "IsDeleted"
+                ],
+                values: [2, 1, "system", DateTime.UtcNow, "system", DateTime.UtcNow, false]
+            );
+
+            // assign all acction to SuperAdmin rol
+            migrationBuilder.Sql(@"
+                INSERT INTO ""RoleAction"" (""RoleId"", ""ActionId"", ""CreatedBy"", ""CreatedDate"", ""LastModifiedBy"", ""LastModifiedDate"", ""IsDeleted"")
+                SELECT 1, a.""Id"", 'system', NOW(), 'system', NOW(), false
+                FROM ""Action"" a
+                WHERE NOT EXISTS (
+                    SELECT 1 FROM ""RoleAction"" ra 
+                    WHERE ra.""RoleId"" = 1 AND ra.""ActionId"" = a.""Id""
+                );
+            ");
+
+            // assign some actions to Client rol
+            migrationBuilder.Sql(@"
+                INSERT INTO ""RoleAction"" (""RoleId"", ""ActionId"", ""CreatedBy"", ""CreatedDate"", ""LastModifiedBy"", ""LastModifiedDate"", ""IsDeleted"")
+                SELECT 6, a.""Id"", 'system', NOW(), 'system', NOW(), false
+                FROM ""Action"" a
+                WHERE a.""Id"" IN (10, 11)
+                  AND NOT EXISTS (
+                      SELECT 1 FROM ""RoleAction"" ra
+                      WHERE ra.""RoleId"" = 6 AND ra.""ActionId"" = a.""Id""
+                  );
+            ");
+        }
