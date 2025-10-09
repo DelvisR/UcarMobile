@@ -5,18 +5,18 @@ matrix:
       - "**/*.md"
     dictionary:
       language: en_US
-    aspell:
-      lang: en
-      add-extra-dicts: true
+    hunspell:
+      dictionaries:
+        - en_US
 
   - name: JSON
     sources:
       - "**/*.json"
     dictionary:
       language: en_US
-    aspell:
-      lang: en
-      add-extra-dicts: true
+    hunspell:
+      dictionaries:
+        - en_US
 
 allow:
   - GitHub
