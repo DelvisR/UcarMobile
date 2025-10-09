@@ -1,0 +1,16 @@
+version: "0.3"
+dictionary:
+  language: en_US
+  name: English
+sources:
+  - path: "**/*.md"
+    aspell:
+      lang: en
+  - path: "**/*.json"
+    aspell:
+      lang: en
+allow:
+  - GitHub
+  - API
+  - JSON
+  - Markdown
