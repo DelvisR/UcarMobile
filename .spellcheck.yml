@@ -1,16 +1,26 @@
 version: "0.3"
-dictionary:
-  language: en_US
-  name: English
-sources:
-  - path: "**/*.md"
+matrix:
+  - name: Markdown
+    sources:
+      - "**/*.md"
+    dictionary:
+      language: en_US
     aspell:
       lang: en
-  - path: "**/*.json"
+      add-extra-dicts: true
+
+  - name: JSON
+    sources:
+      - "**/*.json"
+    dictionary:
+      language: en_US
     aspell:
       lang: en
+      add-extra-dicts: true
+
 allow:
   - GitHub
   - API
   - JSON
   - Markdown
+  - README
