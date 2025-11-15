@@ -25,6 +25,7 @@ public class AwsSettings
     public AwsSnsOptions Sns { get; set; } = new();
     public AwsPushOptions Push { get; set; } = new();
     public AwsSqsOptions Sqs { get; set; } = new();
+    public AwsS3Options S3 { get; set; } = new();
 }
 
 /// <summary>
@@ -42,6 +43,12 @@ public class AwsSecretsOptions
 
     /// <summary>Name or ARN of the Cognito root secret.</summary>
     public string? CognitoRootSecretId { get; set; }
+
+    /// <summary>Name or ARN of the Stripe secret.</summary>
+    public string? StripeSecretId { get; set; }
+
+    /// <summary>Name or ARN of the Google API key secret.</summary>
+    public string? GoogleApiKeySecretId { get; set; }
 }
 
 /// <summary>Cognito settings (User Pool, Client ID, etc.).</summary>
@@ -118,4 +125,19 @@ public class AwsSqsOptions
 
         return $"https://sqs.{region}.amazonaws.com/{accountId}/{QueueName}";
     }
+}
+
+public class AwsS3Options
+{
+    /// <summary>The S3 bucket name that stores files.</summary>
+    public string BucketName { get; set; } = string.Empty;
+
+    /// <summary>Optional base path/prefix inside bucket (e.g., "app-data").</summary>
+    public string BasePath { get; set; } = "app-data";
+
+    /// <summary>Default presigned URL expiration in minutes.</summary>
+    public int PresignMinutes { get; set; } = 10;
+
+    /// <summary>Use path-style URLs if needed (usually false).</summary>
+    public bool UsePathStyle { get; set; } = false;
 }

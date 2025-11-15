@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using UcarMobileApi.Core.Entities;
+using UcarMobileApi.Core.Entities.Clients;
 
 namespace UcarMobileApi.Infrastructure.Configurations.EntityTypeConfigurations;
 

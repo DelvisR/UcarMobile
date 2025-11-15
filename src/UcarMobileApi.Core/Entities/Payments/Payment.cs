@@ -1,0 +1,29 @@
+using System.Collections.Generic;
+using UcarMobileApi.Core.Entities.Clients;
+
+namespace UcarMobileApi.Core.Entities.Payments;
+
+/// <summary>
+/// Represents a payment transaction made by a client through a payment provider (e.g., Stripe).
+/// </summary>
+public class Payment : EntityBase
+{
+    public int ClientId { get; set; }
+    public int PaymentMethodId { get; set; }
+    public string ProviderPaymentId { get; set; } = string.Empty; // payment_intent id
+    public string? MetadataJson { get; set; }    // traceability
+    public long AmountCents { get; set; }
+    public string Currency { get; set; } = "usd";
+    public string Status { get; set; } = "pending";
+    public string? ClientSecret { get; init; }
+    public string? ErrorCode { get; set; }
+
+    // Navigation properties
+    public virtual PaymentMethod PaymentMethod { get; set; } = null!;
+    public Client Client { get; set; } = null!;
+
+    /// <summary>
+    /// Collection of refunds related to this payment.
+    /// </summary>
+    public ICollection<PaymentRefund> Refunds { get; set; } = new List<PaymentRefund>();
+}

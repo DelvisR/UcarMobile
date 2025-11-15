@@ -5,22 +5,29 @@ using System.Threading.Tasks;
 using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using FluentValidation;
+using Gridify;
+using Gridify.EntityFramework;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using UcarMobileApi.Application.Common.Interfaces;
+using UcarMobileApi.Application.Common.Models;
 using UcarMobileApi.Application.DTOs.Users;
+using UcarMobileApi.Application.Utilities;
 using UcarMobileApi.Application.Validators.Users;
 using UcarMobileApi.Core.Entities.Users;
 
 namespace UcarMobileApi.Application.Services.Users;
 
-public class UserService(IMapper mapper, IAppDbContext context)
+public class UserService(IMapper mapper, IAppDbContext context, IGridifyMapper<User> gridifymapper)
 {
-    public async Task<List<UserDto>> GetUsersAsync(CancellationToken ct)
+    public async Task<(IHeaderDictionary, IEnumerable<UserAccountDto>)> GetUsersAsync(QueryFilter query, CancellationToken ct)
     {
-        return await context.Set<User>()
-            .AsNoTracking()
-            .ProjectTo<UserDto>(mapper.ConfigurationProvider)
-            .ToListAsync(ct);
+        var users = context.Set<User>().AsNoTracking();
+
+        // AutoMapper ProjectTo + Filtering + Ordering + Paging
+        var qp = await users.GridifyQueryableAsync(query, gridifymapper, ct);
+
+        return (qp.GeneratePaginationHttpHeaders(), await qp.Query.ProjectTo<UserAccountDto>(mapper.ConfigurationProvider).ToListAsync(ct));
     }
 
     public async Task<UserDto?> GetUserAsync(int id, CancellationToken ct)
@@ -28,14 +35,14 @@ public class UserService(IMapper mapper, IAppDbContext context)
         return await context.Set<User>()
             .AsNoTracking()
             .Where(u => u.Id == id)
-            .ProjectTo<UserDto>(mapper.ConfigurationProvider)
+            .ProjectTo<UserAccountDto>(mapper.ConfigurationProvider)
             .FirstOrDefaultAsync(ct);
     }
 
-    public async Task CreateUserAsync(UserDto dto, CancellationToken ct)
+    public async Task CreateUserAsync(UserAccountDto dto, CancellationToken ct)
     {
         // Validation
-        var validator = new UserValidator<UserDto>(context);
+        var validator = new UserAccountValidator(context);
         await validator.ValidateAndThrowAsync(dto, ct);
 
         var user = mapper.Map<User>(dto);
@@ -44,10 +51,10 @@ public class UserService(IMapper mapper, IAppDbContext context)
         await context.SaveChangesAsync(ct);
     }
 
-    public async Task UpdateUserAsync(int id, UserDto dto, CancellationToken ct)
+    public async Task UpdateUserAsync(int id, UserAccountDto dto, CancellationToken ct)
     {
         // Validation
-        var validator = new UserValidator<UserDto>(context);
+        var validator = new UserAccountValidator(context);
         await validator.ValidateAndThrowAsync(dto, ct);
 
         var user = await context.Set<User>()

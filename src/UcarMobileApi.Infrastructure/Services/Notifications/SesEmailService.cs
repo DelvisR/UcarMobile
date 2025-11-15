@@ -40,6 +40,6 @@ public class SesEmailService(IAmazonSimpleEmailServiceV2 ses, IOptions<AwsSettin
             }
         };
 
-        await ses.SendEmailAsync(request, ct);
+        var result = await ses.SendEmailAsync(request, ct);
     }
 }

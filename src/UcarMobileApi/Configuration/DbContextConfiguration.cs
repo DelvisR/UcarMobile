@@ -1,7 +1,8 @@
 using Microsoft.EntityFrameworkCore;
+using Serilog;
 using UcarMobileApi.Application.Common.Interfaces;
 using UcarMobileApi.Infrastructure.Data;
-using UcarMobileApi.Infrastructure.Services;
+using UcarMobileApi.Infrastructure.Factories;
 
 namespace UcarMobileApi.Configuration;
 
@@ -15,7 +16,7 @@ public static class DbContextConfiguration
     /// Registers and configures the application's database context.
     /// Also registers IAppDbContext to resolve the DbContext via its interface.
     /// </summary>
-    public static IServiceCollection AddAppDbContext(this IServiceCollection services)
+    public static IServiceCollection AddAppDbContext(this IServiceCollection services, IWebHostEnvironment env)
     {
         services.AddDbContext<AppDbContext>((serviceProvider, options) =>
         {
@@ -25,6 +26,13 @@ public static class DbContextConfiguration
             options.UseNpgsql(connectionString, o => o
                 .UseNetTopologySuite()
                 .UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery));
+
+            if (env.IsDevelopment())
+            {
+                options
+                    .EnableSensitiveDataLogging()
+                    .LogTo(Log.Information, LogLevel.Information);
+            }
         });
 
         services.AddScoped<IAppDbContext>(provider => provider.GetRequiredService<AppDbContext>());

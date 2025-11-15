@@ -8,6 +8,8 @@ public static class ValidatorErrors
     public const string MinLenght = "{{PropertyName}} must be {0} character min.";
     public const string MaxLengthExceeded = "{{PropertyName}} must be {0} character max.";
     public const string LengthMismatch = "{{PropertyName}} must be {0} character.";
+    public const string Between = "{{PropertyName}} must be between {0} and {1}.";
+    public const string GreaterThan = "{{PropertyName}} must be greater than {0}.";
     public const string GreaterThanZero = "{{PropertyName}} must be greater than zero.";
     public const string MustBeNonNegative = "{{PropertyName}} must be zero or greater.";
     public const string InvalidFileExtension = "Invalid file extension.";

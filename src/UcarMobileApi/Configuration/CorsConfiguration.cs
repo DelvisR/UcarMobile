@@ -29,7 +29,10 @@ public static class CorsConfiguration
             {
                 // ORIGINS
                 if (allowedOrigins is ["*"])
+                {
                     builder.AllowAnyOrigin();
+                    builder.DisallowCredentials();
+                }
                 else
                 {
                     builder.WithOrigins(allowedOrigins);

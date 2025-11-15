@@ -1,21 +1,50 @@
 {
   "profiles": {
-    "UcarMobileApi": {
+    "UcarMobileApi-Dev": {
       "commandName": "Project",
       "launchBrowser": true,
-      "launchUrl": "swagger",
+      "launchUrl": "swagger", // open Swagger directly
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
-      },
-      "applicationUrl": "https://localhost:5667;http://localhost:5668"
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        // "AWS:Secrets:DatabaseSecretId" => can be replaced with the environment variable "AWS__Secrets__DatabaseSecretId"
+        "AWS__Secrets__DatabaseSecretId": "UcarMobile/Dev/DataBase",
+        // "AWS:Secrets:CognitoRootSecretId" => can be replaced with the environment variable "AWS__Secrets__CognitoRootSecretId"
+        "AWS__Secrets__CognitoRootSecretId": "UcarMobile/CognitoRoot",
+        "AWS__Secrets__StripeSecretId": "UcarMobile/Stripe",
+        "AWS__Secrets__GoogleApiKeySecretId": "UcarMobile/Google/APIKey"
+      }
+      // "applicationUrl": "https://localhost:5667;http://localhost:5668"
     },
-    "UcarMobileApi-Production": {
+    "UcarMobileApi-Dev-local": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "launchUrl": "swagger", // open Swagger directly
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "LOCAL": "true",
+      }
+      // "applicationUrl": "https://localhost:5667;http://localhost:5668"
+    },
+    "UcarMobileApi-Prod": {
       "commandName": "Project",
       "launchBrowser": true,
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Production",
-      },
-      "applicationUrl": "https://localhost:7667;http://localhost:7668"
+        // "AWS:Secrets:DatabaseSecretId" => can be replaced with the environment variable "AWS__Secrets__DatabaseSecretId"
+        "AWS__Secrets__DatabaseSecretId": "UcarMobile/Prod/DataBase",
+        // "AWS:Secrets:CognitoRootSecretId" => can be replaced with the environment variable "AWS__Secrets__CognitoRootSecretId"
+        "AWS__Secrets__CognitoRootSecretId": "UcarMobile/CognitoRoot",
+        "AWS__Secrets__StripeSecretId": "UcarMobile/Stripe",
+        "AWS__Secrets__GoogleApiKeySecretId": "UcarMobile/Google/APIKey",
+        // In production, the Elastic Beanstalk environment has an EC2 instance profile (IAM role associated with the instance).
+        // Simply creating or adjusting the role so that it has permissions for other services is sufficient;
+        // there is no need to have environment variables with the keys.
+        // For example:
+        // - For email (SES) permissions => ses:SendEmail, ses:SendTemplatedEmail, or AmazonSESFullAccess.
+        // - For SNS (Simple Notification Service) => sns:Publish
+        // - Secret Manager => secretsmanager:GetSecretValue
+      }
+      // "applicationUrl": "https://localhost:7667;http://localhost:7668"
     }
   }
 }

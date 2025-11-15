@@ -114,6 +114,15 @@ namespace UcarMobileApi.Middleware
                     };
                     break;
 
+                case HttpRequestException httpEx:
+                    statusCode = (int)HttpStatusCode.BadGateway;
+                    response = new
+                    {
+                        message = httpEx.Message,
+                        traceId = context.TraceIdentifier
+                    };
+                    break;
+
                 default:
                     // Catch-all for unexpected errors
                     statusCode = (int)HttpStatusCode.InternalServerError;

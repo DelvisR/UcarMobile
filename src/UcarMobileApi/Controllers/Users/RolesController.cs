@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using UcarMobileApi.Application.DTOs.Users;
 using UcarMobileApi.Application.Services.Users;
@@ -13,7 +12,6 @@ namespace UcarMobileApi.Controllers.Users;
 /// </summary>
 [ApiController]
 [Route("api/roles")]
-[Authorize]
 public class RolesController(RoleService roleService) : ControllerBase
 {
     /// <summary>
@@ -51,7 +49,7 @@ public class RolesController(RoleService roleService) : ControllerBase
     /// </summary>
     /// <param name="dto">The role data.</param>
     /// <param name="ct">Request cancellation token.</param>
-    /// <response code="204">No Content.</response>
+    /// <response code="201">Created.</response>
     [HttpPost]
     [RequireAction("ACTION_CREATE_ROLE")]
     [ProducesResponseType(StatusCodes.Status201Created)]
@@ -75,7 +73,9 @@ public class RolesController(RoleService roleService) : ControllerBase
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> UpdateRole(int id, RoleDto dto, CancellationToken ct)
     {
-        await roleService.UpdateRoleAsync(id, dto, ct);
+        if (id != dto.Id) return BadRequest("Id in route and payload do not match.");
+
+        await roleService.UpdateRoleAsync(dto, ct);
         return NoContent();
     }
 

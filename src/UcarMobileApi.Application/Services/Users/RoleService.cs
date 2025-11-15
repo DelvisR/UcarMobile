@@ -41,14 +41,14 @@ public class RoleService(IAppDbContext context, IMapper mapper)
         await context.SaveChangesAsync(ct);
     }
 
-    public async Task UpdateRoleAsync(int id, RoleDto dto, CancellationToken ct)
+    public async Task UpdateRoleAsync(RoleDto dto, CancellationToken ct)
     {
         // Validation
         var validator = new RoleValidator(context);
         await validator.ValidateAndThrowAsync(dto, ct);
 
-        var role = await context.Set<Role>().FirstOrDefaultAsync(r => r.Id == id, ct)
-                   ?? throw new KeyNotFoundException($"Role with ID {id} not found.");
+        var role = await context.Set<Role>().FirstOrDefaultAsync(r => r.Id == dto.Id, ct)
+                   ?? throw new KeyNotFoundException($"Role with ID {dto.Id} not found.");
 
         mapper.Map(dto, role);
 

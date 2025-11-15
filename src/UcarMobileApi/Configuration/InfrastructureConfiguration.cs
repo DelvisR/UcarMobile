@@ -1,10 +1,15 @@
 using Amazon;
+using Amazon.S3;
 using Amazon.SimpleEmailV2;
 using Amazon.SimpleNotificationService;
 using Amazon.SQS;
 using UcarMobileApi.Application.Common.Interfaces;
 using UcarMobileApi.Infrastructure.Configurations.Settings;
+using UcarMobileApi.Infrastructure.Providers;
+using UcarMobileApi.Infrastructure.Services.Location;
 using UcarMobileApi.Infrastructure.Services.Notifications;
+using UcarMobileApi.Infrastructure.Services.Payments;
+using UcarMobileApi.Infrastructure.Services.Storage;
 
 namespace UcarMobileApi.Configuration;
 
@@ -22,7 +27,9 @@ public static class InfrastructureConfiguration
     /// <returns>The updated service collection.</returns>
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, AwsSettings awsSettings)
     {
-        // Determine effective AWS region, prioritizing AWS_REGION environment variable
+        #region AWS Notification
+
+        // Determine effective AWS region
         var region = RegionEndpoint.GetBySystemName(awsSettings.Region);
 
         // Register AWS SDK clients as singletons
@@ -44,6 +51,17 @@ public static class InfrastructureConfiguration
         // register the Amazon SQS client
         services.AddAWSService<IAmazonSQS>();
 
+        // Register the Amazon S3 client
+        services.AddSingleton<IAmazonS3>(_ =>
+        {
+            var cfg = new AmazonS3Config
+            {
+                RegionEndpoint = region,
+                ForcePathStyle = awsSettings.S3.UsePathStyle
+            };
+            return new AmazonS3Client(cfg);
+        });
+
         // register your publisher and background worker
         services.AddSingleton<NotificationQueuePublisher>(sp =>
         {
@@ -52,8 +70,38 @@ public static class InfrastructureConfiguration
         });
 
         // Register your BackgroundService in the .NET dependency container so that it runs automatically in parallel
-        // when the API is launched.
+        // when the API is launched. Then, is Singleton by default
         services.AddHostedService<NotificationBackgroundService>();
+
+        #endregion
+
+        #region Stripe
+
+        // Register Stripe Payment Processing service and webhook
+        services.AddScoped<IPaymentService, StripePaymentService>();
+        services.AddScoped<IPaymentWebHookService, StripePaymentWebHookService>();
+
+        #endregion
+
+        #region Google API
+
+        // Register Google API key factory as singleton for caching
+        services.AddSingleton<GoogleApiKeyProvider>();
+
+        // Register HTTP client for LocationService
+        services.AddHttpClient<ILocationService, LocationService>();
+
+        // Register location service as scoped
+        services.AddScoped<ILocationService, LocationService>();
+
+        #endregion
+
+        #region Storage
+
+        // Register File Storage service (S3 implementation)
+        services.AddScoped<IFileStorageService, S3FileStorageService>();
+
+        #endregion
 
         return services;
     }

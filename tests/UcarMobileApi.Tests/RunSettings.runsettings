@@ -1,0 +1,7 @@
+<RunSettings>
+  <RunConfiguration>
+    <EnvironmentVariables>
+      <STRIPE_TEST_SECRET_KEY></STRIPE_TEST_SECRET_KEY>
+    </EnvironmentVariables>
+  </RunConfiguration>
+</RunSettings>

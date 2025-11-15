@@ -1,4 +1,6 @@
 // Infrastructure/Services/Notifications/NotificationQueuePublisher.cs
+
+using System;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -24,6 +26,7 @@ public class NotificationQueuePublisher(IAmazonSQS sqs, AwsSettings awsSettings)
             QueueUrl = queueUrl,
             MessageBody = body
         };
-        await sqs.SendMessageAsync(request, ct);
+        var result = await sqs.SendMessageAsync(request, ct);
+        Console.WriteLine(result.MessageId);
     }
 }

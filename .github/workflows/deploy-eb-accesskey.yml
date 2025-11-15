@@ -1,0 +1,109 @@
+name: 🚀 Deploy to AWS Elastic Beanstalk
+
+on:
+  # 👇 Allows manual deployment from GitHub Actions UI
+  workflow_dispatch:
+
+  # 👇 Automatically triggers after a merge into development or main
+  # Direct pushes to these branches are normally restricted
+  push:
+    branches:
+      # - development
+      - main
+    # paths-ignore:
+    #   - '.github/workflows/**'
+
+permissions:
+  contents: read        # Read access for repository checkout
+
+env:
+  DOTNET_VERSION: '9.0' # The .NET SDK version
+  PROJECT_PATH: 'src/UcarMobileApi/UcarMobileApi.csproj'
+  PUBLISH_DIR: './publish'
+  PACKAGE_FILE: './publish.zip'
+
+jobs:
+  deploy:
+    name: Deploy to AWS Elastic Beanstalk
+    runs-on: ubuntu-latest
+
+    # Dynamically select the target environment based on the branch name
+    environment: ${{ github.ref_name == 'main' && 'Production' || 'Development' }}
+
+    steps:
+      # ------------------------------------------------------
+      # 🧾 Step 1: Checkout the source code
+      # ------------------------------------------------------
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ------------------------------------------------------
+      # 🧰 Step 2: Install .NET SDK
+      # ------------------------------------------------------
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      # ------------------------------------------------------
+      # ⚡ Step 3: Cache NuGet packages for faster builds
+      # ------------------------------------------------------
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      # ------------------------------------------------------
+      # 🔍 Step 4: Restore project dependencies
+      # ------------------------------------------------------
+      - name: Restore dependencies
+        run: dotnet restore ${{ env.PROJECT_PATH }}
+
+      # ------------------------------------------------------
+      # 🧱 Step 5: Build the project in Release mode
+      # ------------------------------------------------------
+      - name: Build the project
+        run: dotnet build ${{ env.PROJECT_PATH }} --no-restore -c Release
+
+      # ------------------------------------------------------
+      # 🛡️ Step 6: Scan for vulnerable NuGet packages
+      # ------------------------------------------------------
+      - name: Check for vulnerable packages
+        run: dotnet list ${{ env.PROJECT_PATH }} package --vulnerable || true
+
+      # ------------------------------------------------------
+      # 🧹 Step 7: Clean up previous publish directory
+      # ------------------------------------------------------
+      - name: Clean old publish folder
+        run: rm -rf ${{ env.PUBLISH_DIR }}
+
+      # ------------------------------------------------------
+      # ⚙️ Step 8: Publish a framework-dependent build
+      # ------------------------------------------------------
+      - name: Publish application (framework-dependent)
+        run: dotnet publish ${{ env.PROJECT_PATH }} -c Release -o ${{ env.PUBLISH_DIR }}
+        
+      # ------------------------------------------------------
+      # 📦 Step 9: Compress published output into a .zip package
+      # ------------------------------------------------------
+      - name: Package published output
+        run: |
+          cd ${{ env.PUBLISH_DIR }}
+          zip -r ../${{ env.PACKAGE_FILE }} .
+          
+      # ------------------------------------------------------
+      # 🚀 Step 10: Deploy to AWS Elastic Beanstalk (community maintained)
+      # ------------------------------------------------------
+      - name: Deploy to Elastic Beanstalk
+        uses: einaregilsson/beanstalk-deploy@v22
+        with:
+          aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          region: ${{ vars.AWS_REGION }}
+          application_name: ${{ secrets.EB_APPLICATION_NAME }}
+          environment_name: ${{ secrets.EB_ENVIRONMENT_NAME }}
+          version_label: v-${{ github.run_number }}-${{ github.sha }}
+          deployment_package: ${{ env.PACKAGE_FILE }}

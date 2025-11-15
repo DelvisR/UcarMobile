@@ -23,6 +23,58 @@ namespace UcarMobileApi.Infrastructure.Migrations
             NpgsqlModelBuilderExtensions.HasPostgresExtension(modelBuilder, "postgis");
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("UcarMobileApi.Core.Entities.Clients.Lead", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("FirstName")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<string>("LastModifiedBy")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<DateTime>("LastModifiedDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("LastName")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("Phone")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Phone")
+                        .HasDatabaseName("IX_Lead_Phone");
+
+                    b.ToTable("Lead", (string)null);
+                });
+
             modelBuilder.Entity("UcarMobileApi.Core.Entities.Configurations.BusinessParameter", b =>
                 {
                     b.Property<int>("Id")
@@ -78,6 +130,344 @@ namespace UcarMobileApi.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("BusinessParameter");
+                });
+
+            modelBuilder.Entity("UcarMobileApi.Core.Entities.Payments.Payment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<long>("AmountCents")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("ClientId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ClientSecret")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(8)
+                        .HasColumnType("character varying(8)")
+                        .HasDefaultValue("usd");
+
+                    b.Property<string>("ErrorCode")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<string>("LastModifiedBy")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<DateTime>("LastModifiedDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("MetadataJson")
+                        .HasColumnType("text");
+
+                    b.Property<int>("PaymentMethodId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ProviderPaymentId")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClientId");
+
+                    b.HasIndex("PaymentMethodId");
+
+                    b.HasIndex("ProviderPaymentId")
+                        .IsUnique();
+
+                    b.ToTable("Payment");
+                });
+
+            modelBuilder.Entity("UcarMobileApi.Core.Entities.Payments.PaymentMethod", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Brand")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<int>("ClientId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("ExpMonth")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("ExpYear")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IsDefault")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<string>("Last4")
+                        .HasMaxLength(4)
+                        .HasColumnType("character varying(4)");
+
+                    b.Property<string>("LastModifiedBy")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<DateTime>("LastModifiedDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ProviderPaymentMethodId")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClientId", "ProviderPaymentMethodId")
+                        .IsUnique();
+
+                    b.ToTable("PaymentMethod");
+                });
+
+            modelBuilder.Entity("UcarMobileApi.Core.Entities.Payments.PaymentRefund", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<long>("AmountCents")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(8)
+                        .HasColumnType("character varying(8)")
+                        .HasDefaultValue("usd");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<string>("LastModifiedBy")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<DateTime>("LastModifiedDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("PaymentId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ProviderRefundId")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PaymentId");
+
+                    b.HasIndex("ProviderRefundId")
+                        .IsUnique();
+
+                    b.ToTable("PaymentRefund");
+                });
+
+            modelBuilder.Entity("UcarMobileApi.Core.Entities.ServiceZone.ServiceZone", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("BaseAddress")
+                        .IsRequired()
+                        .HasMaxLength(250)
+                        .HasColumnType("character varying(250)");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<string>("LastModifiedBy")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<DateTime>("LastModifiedDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<double>("Lat")
+                        .HasColumnType("double precision");
+
+                    b.Property<double>("Lng")
+                        .HasColumnType("double precision");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.Property<double>("RadiusMiles")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("double precision")
+                        .HasDefaultValue(25.0);
+
+                    b.Property<string>("ZipCodes")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BaseAddress");
+
+                    b.HasIndex("IsActive");
+
+                    b.HasIndex("ZipCodes");
+
+                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("ZipCodes"), "gin");
+
+                    b.ToTable("ServiceZone");
+                });
+
+            modelBuilder.Entity("UcarMobileApi.Core.Entities.Storage.StoredFile", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Bucket")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<string>("Key")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
+
+                    b.Property<string>("LastModifiedBy")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<DateTime>("LastModifiedDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("Size")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FileName");
+
+                    b.HasIndex("Key")
+                        .IsUnique();
+
+                    b.ToTable("StoredFile");
                 });
 
             modelBuilder.Entity("UcarMobileApi.Core.Entities.Users.Action", b =>
@@ -448,13 +838,16 @@ namespace UcarMobileApi.Infrastructure.Migrations
                     b.ToTable("Vehicle");
                 });
 
-            modelBuilder.Entity("UcarMobileApi.Core.Entities.Client", b =>
+            modelBuilder.Entity("UcarMobileApi.Core.Entities.Clients.Client", b =>
                 {
                     b.HasBaseType("UcarMobileApi.Core.Entities.Users.User");
 
                     b.Property<string>("Address")
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
+
+                    b.Property<string>("ProviderPaymentCustomerId")
+                        .HasColumnType("text");
 
                     b.ToTable("Client", (string)null);
                 });
@@ -469,6 +862,47 @@ namespace UcarMobileApi.Infrastructure.Migrations
                         .HasDefaultValue(false);
 
                     b.ToTable("Technician", (string)null);
+                });
+
+            modelBuilder.Entity("UcarMobileApi.Core.Entities.Payments.Payment", b =>
+                {
+                    b.HasOne("UcarMobileApi.Core.Entities.Clients.Client", "Client")
+                        .WithMany("Payments")
+                        .HasForeignKey("ClientId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("UcarMobileApi.Core.Entities.Payments.PaymentMethod", "PaymentMethod")
+                        .WithMany("Payments")
+                        .HasForeignKey("PaymentMethodId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Client");
+
+                    b.Navigation("PaymentMethod");
+                });
+
+            modelBuilder.Entity("UcarMobileApi.Core.Entities.Payments.PaymentMethod", b =>
+                {
+                    b.HasOne("UcarMobileApi.Core.Entities.Clients.Client", "Client")
+                        .WithMany("PaymentMethods")
+                        .HasForeignKey("ClientId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Client");
+                });
+
+            modelBuilder.Entity("UcarMobileApi.Core.Entities.Payments.PaymentRefund", b =>
+                {
+                    b.HasOne("UcarMobileApi.Core.Entities.Payments.Payment", "Payment")
+                        .WithMany("Refunds")
+                        .HasForeignKey("PaymentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Payment");
                 });
 
             modelBuilder.Entity("UcarMobileApi.Core.Entities.Users.Device", b =>
@@ -522,16 +956,16 @@ namespace UcarMobileApi.Infrastructure.Migrations
 
             modelBuilder.Entity("UcarMobileApi.Core.Entities.Vehicle", b =>
                 {
-                    b.HasOne("UcarMobileApi.Core.Entities.Client", null)
+                    b.HasOne("UcarMobileApi.Core.Entities.Clients.Client", null)
                         .WithMany("Vehicles")
                         .HasForeignKey("ClientId");
                 });
 
-            modelBuilder.Entity("UcarMobileApi.Core.Entities.Client", b =>
+            modelBuilder.Entity("UcarMobileApi.Core.Entities.Clients.Client", b =>
                 {
                     b.HasOne("UcarMobileApi.Core.Entities.Users.User", null)
                         .WithOne()
-                        .HasForeignKey("UcarMobileApi.Core.Entities.Client", "Id")
+                        .HasForeignKey("UcarMobileApi.Core.Entities.Clients.Client", "Id")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
@@ -543,6 +977,16 @@ namespace UcarMobileApi.Infrastructure.Migrations
                         .HasForeignKey("UcarMobileApi.Core.Entities.Technician", "Id")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("UcarMobileApi.Core.Entities.Payments.Payment", b =>
+                {
+                    b.Navigation("Refunds");
+                });
+
+            modelBuilder.Entity("UcarMobileApi.Core.Entities.Payments.PaymentMethod", b =>
+                {
+                    b.Navigation("Payments");
                 });
 
             modelBuilder.Entity("UcarMobileApi.Core.Entities.Users.Action", b =>
@@ -562,8 +1006,12 @@ namespace UcarMobileApi.Infrastructure.Migrations
                     b.Navigation("UserRoles");
                 });
 
-            modelBuilder.Entity("UcarMobileApi.Core.Entities.Client", b =>
+            modelBuilder.Entity("UcarMobileApi.Core.Entities.Clients.Client", b =>
                 {
+                    b.Navigation("PaymentMethods");
+
+                    b.Navigation("Payments");
+
                     b.Navigation("Vehicles");
                 });
 #pragma warning restore 612, 618

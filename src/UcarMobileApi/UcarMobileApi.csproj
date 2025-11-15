@@ -29,8 +29,11 @@
     <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="9.0.9" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="9.0.5" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.14.0" />
+    <PackageReference Include="System.Text.Json" Version="9.0.9" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="logs\" />
+    <None Update="Procfile">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 </Project>

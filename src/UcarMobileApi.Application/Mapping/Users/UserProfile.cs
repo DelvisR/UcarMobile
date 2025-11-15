@@ -11,18 +11,21 @@ public class UserProfile : Profile
     public UserProfile()
     {
         // User -> UserDto
-        CreateMap<User, UserDto>()
-        //.ForMember(dest => dest.Roles, opt => opt.Ignore());
-        .ForMember(dest => dest.Roles, opt => opt.MapFrom(src => src.UserRoles.Select(ur => ur.Role)));
+        CreateMap<User, UserDto>().ReverseMap();
+
+        // User -> CurrentUserDto
+        CreateMap<User, UserAccountDto>()
+            .ForMember(dest => dest.AuthProviderId, opt => opt.Ignore())
+            .ForMember(dest => dest.Roles, opt => opt.MapFrom(src => src.UserRoles.Select(ur => ur.Role)));
 
         // UserDto -> User
-        CreateMap<UserDto, User>()
+        CreateMap<UserAccountDto, User>()
+            .ForMember(dest => dest.AuthProviderId, opt => opt.Ignore())
             .EqualityComparison((dto, entity) => dto.Id == entity.Id)
             .ForMember(dest => dest.UserRoles, opt => opt.MapFrom(src => src.Roles));
 
         // User -> CurrentUserDto
         CreateMap<User, CurrentUserDto>()
-            //.ForMember(dest => dest.Roles, opt => opt.Ignore());
             .ForMember(dest => dest.Roles, opt => opt.MapFrom(src => src.UserRoles.Select(ur => ur.Role)));
 
         // Map Role -> RoleNameDto (only the Name field)

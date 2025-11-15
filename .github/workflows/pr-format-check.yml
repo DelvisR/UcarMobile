@@ -1,0 +1,17 @@
+name: PR Format Check
+
+on:
+  pull_request:
+    types: [opened, reopened, edited, synchronize, ready_for_review]
+    branches:
+      - development
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  check-pr:
+    uses: UcarMobile/.github/.github/workflows/pr-format-check-global.yml@main
+    with:
+      allowedPrefixes: feature,bugfix,hotfix,documentation

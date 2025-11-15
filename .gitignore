@@ -24,6 +24,9 @@ packages/
 src/UcarMobileApi/Logs/
 Logs/
 
+# publish
+publish/
+
 # Local settings
 appsettings.Local.json
 

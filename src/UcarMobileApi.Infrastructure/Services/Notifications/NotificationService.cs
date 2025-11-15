@@ -25,6 +25,11 @@ public class NotificationService(IEmailService emailService, ISmsService smsServ
     /// <summary>
     /// Send a push notification.
     /// </summary>
-    public Task SendPushAsync(int userId, string title, string message, CancellationToken ct = default)
-        => pushService.SendPushAsync(userId, title, message, ct);
+    public async Task SendPushAsync(int userId, string title, string message, CancellationToken ct = default)
+    {
+        var invalids = await pushService.SendPushAsync(userId, title, message, ct);
+
+        if (invalids.Count > 0)
+            await pushService.CleanInvalidEndpointsAsync(userId, invalids, ct);
+    }
 }

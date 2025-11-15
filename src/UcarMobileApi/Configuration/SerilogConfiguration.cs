@@ -40,7 +40,7 @@ namespace UcarMobileApi.Configuration
 
                 builder.Host.UseSerilog();
 
-                Log.Warning(ex, "⚠️ Failed to load Serilog from configuration. Falling back to console logging.");
+                Log.Warning(ex, "Failed to load Serilog from configuration. Falling back to console logging.");
             }
         }
     }

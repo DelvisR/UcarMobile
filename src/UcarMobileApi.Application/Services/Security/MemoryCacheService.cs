@@ -31,6 +31,16 @@ public class MemoryCacheService(IMemoryCache cache) : ICacheService
         return Task.CompletedTask;
     }
 
+    public async Task<T?> GetOrSetAsync<T>(string key, Func<Task<T>> factory, TimeSpan? ttl, TimeSpan? slidingExpiration)
+    {
+        if (cache.TryGetValue(key, out T? value))
+            return value;
+
+        value = await factory();
+        await SetAsync(key, value, ttl, slidingExpiration);
+        return value;
+    }
+
     public Task InvalidateAsync(string key)
     {
         cache.Remove(key);

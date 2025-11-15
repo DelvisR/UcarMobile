@@ -14,6 +14,7 @@ namespace UcarMobileApi.Controllers.Notifications;
 /// </summary>
 [ApiController]
 [Route("api/notifications")]
+[AllowAnonymous]
 public class NotificationsController(NotificationQueuePublisher publisher, ILogger<NotificationsController> logger) : ControllerBase
 {
     /// <summary>
@@ -21,7 +22,6 @@ public class NotificationsController(NotificationQueuePublisher publisher, ILogg
     /// <response code="202">Returns Accepted.</response>
     /// </summary>
     [HttpPost("email")]
-    [AllowAnonymous]
     [ProducesResponseType(StatusCodes.Status202Accepted)]
     public async Task<IActionResult> SendEmail([FromBody] EmailMessage request, CancellationToken ct)
     {
@@ -43,7 +43,6 @@ public class NotificationsController(NotificationQueuePublisher publisher, ILogg
     /// <response code="202">Returns Accepted.</response>
     /// </summary>
     [HttpPost("sms")]
-    [AllowAnonymous]
     [ProducesResponseType(StatusCodes.Status202Accepted)]
     public async Task<IActionResult> SendSms([FromBody] SmsMessage request, CancellationToken ct)
     {
@@ -65,7 +64,6 @@ public class NotificationsController(NotificationQueuePublisher publisher, ILogg
     /// <response code="202">Returns Accepted.</response>
     /// </summary>
     [HttpPost("push")]
-    [AllowAnonymous]
     [ProducesResponseType(StatusCodes.Status202Accepted)]
     public async Task<IActionResult> SendPush([FromBody] PushMessage request, CancellationToken ct)
     {

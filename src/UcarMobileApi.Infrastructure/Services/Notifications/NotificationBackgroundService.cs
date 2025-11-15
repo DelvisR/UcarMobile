@@ -114,7 +114,7 @@ public class NotificationBackgroundService(IAmazonSQS sqs, INotificationService 
         if (SentrySdk.IsEnabled)
             SentrySdk.CaptureException(ex);
 
-        // delay de retroceso simple, configurable si quieres
+        // Simple configurable optional echo delay
         await Task.Delay(TimeSpan.FromSeconds(10), ct);
     }
 

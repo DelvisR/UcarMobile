@@ -35,6 +35,8 @@ namespace UcarMobileApi.Application.Services.Security
         /// </param>
         Task SetAsync<T>(string key, T value, TimeSpan? ttl, TimeSpan? slidingExpiration);
 
+        Task<T?> GetOrSetAsync<T>(string key, Func<Task<T>> factory, TimeSpan? ttl, TimeSpan? slidingExpiration);
+
         /// <summary>
         /// Removes a cache entry by its key.
         /// </summary>

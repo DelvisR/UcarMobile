@@ -20,7 +20,11 @@ public static class MvcConfiguration
         return services.AddControllers()
             .AddNewtonsoftJson(opt =>
             {
+                // Prevent reference loops (common with EF navigation properties)
                 opt.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
+
+                // Do not include null properties in JSON
+                opt.SerializerSettings.NullValueHandling = NullValueHandling.Ignore;
             });
     }
 }

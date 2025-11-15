@@ -3,7 +3,7 @@ using Amazon.SecretsManager;
 using Amazon.SecretsManager.Extensions.Caching; // <-- contains SecretsManagerCache & SecretCacheConfiguration
 using UcarMobileApi.Application.Common.Interfaces;
 using UcarMobileApi.Infrastructure.Configurations.Settings;
-using UcarMobileApi.Infrastructure.Services;
+using UcarMobileApi.Infrastructure.Providers;
 
 namespace UcarMobileApi.Configuration
 {

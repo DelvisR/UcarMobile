@@ -9,8 +9,14 @@ public class UserDto
     public string Phone { get; set; } = string.Empty;
     public string FirstName { get; set; } = string.Empty;
     public string LastName { get; set; } = string.Empty;
+    public string FullName => $"{FirstName} {LastName}";
+    public string? LangKey { get; set; }
     public string? AuthProviderId { get; set; }
     public bool IsActive { get; set; }
+}
+
+public class UserAccountDto : UserDto
+{
     public List<RoleDto>? Roles { get; set; }
 }
 
@@ -21,7 +27,7 @@ public class RoleNameDto
 
 public class CurrentUserDto : UserDto
 {
-    public new List<RoleNameDto>? Roles { get; set; }
+    public List<RoleNameDto>? Roles { get; set; }
 }
 
 /// <summary>

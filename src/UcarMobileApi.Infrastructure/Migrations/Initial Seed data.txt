@@ -94,6 +94,14 @@
                         "ACTION_EDIT_BUSINESS_PARAMETER", "Allows edit existing business parameter", "RESOURCE_DEFAULT",
                         "System", DateTime.UtcNow, "System", DateTime.UtcNow, false
                     },
+                    {
+                        "ACTION_EDIT_LEAD", "Allows editing existing leads", "RESOURCE_DEFAULT", "System", DateTime.UtcNow,
+                        "System", DateTime.UtcNow, false
+                    },
+                    {
+                        "ACTION_DELETE_LEAD", "Allows deleting leads", "RESOURCE_DEFAULT", "System", DateTime.UtcNow, "System",
+                        DateTime.UtcNow, false
+                    },
                 });
 
             // Insert new actions with category "RESOURCE_MAIN_MENU"
@@ -132,6 +140,10 @@
                     },
                     {
                         "ACTION_VIEW_MAIN_MENU_BUSINESS_PARAMETER", "Bussiness parameters menu action", "RESOURCE_MAIN_MENU", "System",
+                        DateTime.UtcNow, "System", DateTime.UtcNow, false
+                    },
+                    {
+                        "ACTION_VIEW_MAIN_MENU_LEADS", "Leads menu action", "RESOURCE_MAIN_MENU", "System",
                         DateTime.UtcNow, "System", DateTime.UtcNow, false
                     },
                 });

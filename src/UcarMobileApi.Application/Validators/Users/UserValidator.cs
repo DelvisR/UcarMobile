@@ -41,14 +41,8 @@ public class UserValidator<TUser> : AbstractValidator<TUser> where TUser : UserD
         RuleFor(x => x.AuthProviderId)
             .NotEmpty().WithMessage(ValidatorErrors.IsRequired)
             .MaximumLength(256).WithMessage(string.Format(ValidatorErrors.MaxLengthExceeded, 256))
-            .MustAsync(BeUniqueAuthProviderId).WithMessage(ValidatorErrors.Duplicated);
-
-        RuleFor(u => u.Roles)
-            .Must(r => r == null || r.Count > 0)
-            .WithMessage(ValidatorErrors.NoEmpty);
-
-        RuleForEach(u => u.Roles)
-            .SetValidator(new RoleValidator(_dbContext));
+            .MustAsync(BeUniqueAuthProviderId).WithMessage(ValidatorErrors.Duplicated)
+            .When(u => u.Id == 0);
     }
 
     private async Task<bool> BeUniqueEmail(UserDto dto, string email, CancellationToken ct)
@@ -66,3 +60,15 @@ public class UserValidator<TUser> : AbstractValidator<TUser> where TUser : UserD
     }
 }
 
+public class UserAccountValidator : UserValidator<UserAccountDto>
+{
+    public UserAccountValidator(IAppDbContext dbContext) : base(dbContext)
+    {
+        RuleFor(u => u.Roles)
+            .Must(r => r == null || r.Count > 0)
+            .WithMessage(ValidatorErrors.NoEmpty);
+
+        RuleForEach(u => u.Roles)
+            .SetValidator(new RoleValidator(dbContext));
+    }
+}

@@ -11,5 +11,5 @@ public class Action : EntityBase
     public string Resource { get; set; } = "RESOURCE_DEFAULT";
 
     // Navigation properties
-    public virtual ICollection<RoleAction> RoleActions { get; set; } = [];
+    public virtual ICollection<RoleAction> RoleActions { get; set; } = new List<RoleAction>();
 }

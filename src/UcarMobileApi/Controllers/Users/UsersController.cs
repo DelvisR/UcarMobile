@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
+using UcarMobileApi.Application.Common.Models;
 using UcarMobileApi.Application.DTOs.Users;
 using UcarMobileApi.Application.Services.Users;
 using UcarMobileApi.Authorization;
+using UcarMobileApi.Web.Extensions;
 
 namespace UcarMobileApi.Controllers.Users;
 
@@ -18,14 +20,17 @@ public class UsersController(UserService userService) : ControllerBase
     /// Gets all users.
     /// Requires 'ACTION_VIEW_MAIN_MENU_USERS' action.
     /// </summary>
-    /// <param name="ct">Request cancellation token.</param>
     /// <response code="200">Returns the list of users.</response>
     /// <response code="401">User not authorized.</response>
     /// <response code="403">User does not have action.</response>
     [HttpGet]
     [RequireAction("ACTION_VIEW_MAIN_MENU_USERS")]
-    public async Task<ActionResult<IEnumerable<UserDto>>> GetUsers(CancellationToken ct)
-        => Ok(await userService.GetUsersAsync(ct));
+    public async Task<ActionResult<IEnumerable<UserAccountDto>>> GetUsers([FromQuery] QueryFilter query, CancellationToken ct)
+    {
+        var (headers, usersDto) = await userService.GetUsersAsync(query, ct);
+
+        return Ok(usersDto).WithHeaders(headers);
+    }
 
     /// <summary>
     /// Gets a specific user by ID.
@@ -37,7 +42,7 @@ public class UsersController(UserService userService) : ControllerBase
     /// <response code="404">NotFound otherwise.</response>
     [HttpGet("{id:int}")]
     [RequireAction("ACTION_VIEW_MAIN_MENU_USERS")]
-    public async Task<ActionResult<UserDto>> GetUser(int id, CancellationToken ct)
+    public async Task<ActionResult<UserAccountDto>> GetUser(int id, CancellationToken ct)
     {
         var user = await userService.GetUserAsync(id, ct);
         return user == null ? NotFound() : Ok(user);
@@ -53,9 +58,8 @@ public class UsersController(UserService userService) : ControllerBase
     [HttpPost]
     [RequireAction("ACTION_CREATE_USER")]
     [ProducesResponseType(StatusCodes.Status201Created)]
-    public async Task<IActionResult> CreateUser(UserDto userDto, CancellationToken ct)
+    public async Task<IActionResult> CreateUser(UserAccountDto userDto, CancellationToken ct)
     {
-        // var sub = User.FindFirstValue("sub");
         await userService.CreateUserAsync(userDto, ct);
 
         return Created();
@@ -72,8 +76,10 @@ public class UsersController(UserService userService) : ControllerBase
     [HttpPut("{id}")]
     [RequireAction("ACTION_EDIT_USER")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public async Task<IActionResult> UpdateUser(int id, UserDto userDto, CancellationToken ct)
+    public async Task<IActionResult> UpdateUser(int id, UserAccountDto userDto, CancellationToken ct)
     {
+        if (id != userDto.Id) return BadRequest("Id in route and payload do not match.");
+
         await userService.UpdateUserAsync(id, userDto, ct);
         return NoContent();
     }
