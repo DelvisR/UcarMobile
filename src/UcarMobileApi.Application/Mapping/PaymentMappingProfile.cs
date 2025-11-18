@@ -25,8 +25,6 @@ public class PaymentMappingProfile : Profile
 
         CreateMap<PaymentMethod, PaymentMethodDto>().ReverseMap();
 
-        CreateMap<PaymentMethodCreateDto, PaymentMethod>();
-
         CreateMap<Refund, PaymentRefund>()
             .ForMember(d => d.Id, o => o.Ignore())
             .ForMember(d => d.ProviderRefundId, o => o.MapFrom(s => s.Id))

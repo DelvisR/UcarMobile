@@ -28,9 +28,11 @@ Logs/
 publish/
 
 # Local settings
-appsettings.Local.json
+appsettings.*local.json
 
 # Dotnet
 *.DS_Store
 *.dotCover
 *.dotTrace
+
+

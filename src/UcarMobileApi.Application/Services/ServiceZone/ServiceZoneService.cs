@@ -27,9 +27,9 @@ public class ServiceZoneService(IAppDbContext context, IMapper mapper, ILocation
     public async Task<ServiceZoneDto> CreateAsync(ServiceZoneDto dto, CancellationToken ct)
     {
         var validator = new ServiceZoneValidator();
-        await validator.ValidateAndThrowAsync(dto, ct).ConfigureAwait(false);
+        await validator.ValidateAndThrowAsync(dto, ct);
 
-        var geo = await location.GetCoordinatesFromAddressAsync(dto.BaseAddress, ct).ConfigureAwait(false)
+        var geo = await location.GetCoordinatesFromAddressAsync(dto.BaseAddress, ct)
                   ?? throw new InvalidOperationException("Invalid BaseAddress. Cannot geocode.");
 
         if (!string.IsNullOrWhiteSpace(geo.Zip) && !dto.ZipCodes.Contains(geo.Zip))
@@ -40,8 +40,8 @@ public class ServiceZoneService(IAppDbContext context, IMapper mapper, ILocation
         zone.Lng = geo.Lng;
 
         context.Set<Core.Entities.ServiceZone.ServiceZone>().Add(zone);
-        await context.SaveChangesAsync(ct).ConfigureAwait(false);
-        await cache.InvalidateAsync(CacheKey).ConfigureAwait(false);
+        await context.SaveChangesAsync(ct);
+        await cache.InvalidateAsync(CacheKey);
 
         return mapper.Map<ServiceZoneDto>(zone);
     }
@@ -52,12 +52,12 @@ public class ServiceZoneService(IAppDbContext context, IMapper mapper, ILocation
     public async Task<ServiceZoneDto?> UpdateAsync(int id, ServiceZoneDto dto, CancellationToken ct)
     {
         var validator = new ServiceZoneValidator();
-        await validator.ValidateAndThrowAsync(dto, ct).ConfigureAwait(false);
+        await validator.ValidateAndThrowAsync(dto, ct);
 
-        var zone = await context.Set<Core.Entities.ServiceZone.ServiceZone>().FirstOrDefaultAsync(z => z.Id == id, ct).ConfigureAwait(false)
+        var zone = await context.Set<Core.Entities.ServiceZone.ServiceZone>().FirstOrDefaultAsync(z => z.Id == id, ct)
             ?? throw new KeyNotFoundException($"ServiceZone with ID {id} not found.");
 
-        var geo = await location.GetCoordinatesFromAddressAsync(dto.BaseAddress, ct).ConfigureAwait(false)
+        var geo = await location.GetCoordinatesFromAddressAsync(dto.BaseAddress, ct)
             ?? throw new InvalidOperationException("Invalid BaseAddress. Cannot geocode.");
 
         if (!string.IsNullOrWhiteSpace(geo.Zip) && !dto.ZipCodes.Contains(geo.Zip))
@@ -67,8 +67,8 @@ public class ServiceZoneService(IAppDbContext context, IMapper mapper, ILocation
         zone.Lat = geo.Lat;
         zone.Lng = geo.Lng;
 
-        await context.SaveChangesAsync(ct).ConfigureAwait(false);
-        await cache.InvalidateAsync(CacheKey).ConfigureAwait(false);
+        await context.SaveChangesAsync(ct);
+        await cache.InvalidateAsync(CacheKey);
 
         return mapper.Map<ServiceZoneDto>(zone);
     }
@@ -80,8 +80,8 @@ public class ServiceZoneService(IAppDbContext context, IMapper mapper, ILocation
     {
         var zones = await cache.GetOrSetAsync(
             CacheKey,
-            async () => await context.Set<Core.Entities.ServiceZone.ServiceZone>().AsNoTracking().ToListAsync(ct).ConfigureAwait(false),
-            TimeSpan.FromHours(24), null).ConfigureAwait(false);
+            async () => await context.Set<Core.Entities.ServiceZone.ServiceZone>().AsNoTracking().ToListAsync(ct),
+            TimeSpan.FromHours(24), null);
 
         return mapper.Map<List<ServiceZoneDto>>(zones);
     }
@@ -91,7 +91,7 @@ public class ServiceZoneService(IAppDbContext context, IMapper mapper, ILocation
     /// </summary>
     public async Task<ServiceZoneDto?> GetByIdAsync(int id, CancellationToken ct = default)
     {
-        var zone = await context.Set<Core.Entities.ServiceZone.ServiceZone>().FindAsync([id], ct).ConfigureAwait(false);
+        var zone = await context.Set<Core.Entities.ServiceZone.ServiceZone>().FindAsync([id], ct);
         return zone == null ? null : mapper.Map<ServiceZoneDto>(zone);
     }
 
@@ -108,11 +108,11 @@ public class ServiceZoneService(IAppDbContext context, IMapper mapper, ILocation
         if (string.IsNullOrWhiteSpace(address))
             throw new ArgumentException("Address is required.", nameof(address));
 
-        var geo = await location.GetCoordinatesFromAddressAsync(address, ct).ConfigureAwait(false);
+        var geo = await location.GetCoordinatesFromAddressAsync(address, ct);
         if (geo == null)
             return new AddressValidationResult(false, 0, 0, string.Empty);
 
-        return await ValidateLatLngZipAsync(geo.Lat, geo.Lng, geo.Zip, ct).ConfigureAwait(false);
+        return await ValidateLatLngZipAsync(geo.Lat, geo.Lng, geo.Zip, ct);
     }
 
     /// <summary>
@@ -121,11 +121,11 @@ public class ServiceZoneService(IAppDbContext context, IMapper mapper, ILocation
     /// </summary>
     public async Task<AddressValidationResult> ValidateAddressByIdAsync(string addressId, CancellationToken ct = default)
     {
-        var geo = await location.GetPlaceLocationAsync(addressId, ct).ConfigureAwait(false);
+        var geo = await location.GetPlaceLocationAsync(addressId, ct);
         if (geo == null)
             return new AddressValidationResult(false, 0, 0, string.Empty);
 
-        return await ValidateLatLngZipAsync(geo.Lat, geo.Lng, geo.Zip, ct).ConfigureAwait(false);
+        return await ValidateLatLngZipAsync(geo.Lat, geo.Lng, geo.Zip, ct);
     }
 
     /// <summary>
@@ -137,7 +137,7 @@ public class ServiceZoneService(IAppDbContext context, IMapper mapper, ILocation
         if (string.IsNullOrWhiteSpace(zip))
             throw new ArgumentException("ZIP code is required.", nameof(zip));
 
-        return await ValidateLatLngZipAsync(lat, lng, zip, ct).ConfigureAwait(false);
+        return await ValidateLatLngZipAsync(lat, lng, zip, ct);
     }
 
     /// <summary>
@@ -145,7 +145,7 @@ public class ServiceZoneService(IAppDbContext context, IMapper mapper, ILocation
     /// </summary>
     private async Task<AddressValidationResult> ValidateLatLngZipAsync(double lat, double lng, string zip, CancellationToken ct)
     {
-        var zones = await GetAllAsync(ct).ConfigureAwait(false);
+        var zones = await GetAllAsync(ct);
         if (zones.Count == 0)
             return new AddressValidationResult(false, lat, lng, zip);
 

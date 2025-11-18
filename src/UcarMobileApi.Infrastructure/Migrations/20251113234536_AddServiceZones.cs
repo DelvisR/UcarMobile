@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -51,6 +51,28 @@ namespace UcarMobileApi.Infrastructure.Migrations
                 table: "ServiceZone",
                 column: "ZipCodes")
                 .Annotation("Npgsql:IndexMethod", "gin");
+
+            // Initial Seed
+            migrationBuilder.InsertData(
+                table: "ServiceZones",
+                columns: ["Id", "Name", "BaseAddress", "RadiusMiles", "Lat", "Lng", "ZipCodes", "IsActive", "CreatedBy", "CreatedDate", "LastModifiedBy", "LastModifiedDate", "IsDeleted"
+                ],
+                values: new object[]
+                {
+                    1,
+                    "UcarMobile",
+                    "3400 14th Street Plano, TX",
+                    25.0,
+                    33.0146527,
+                    -96.6702438,
+                    "[\"75074\"]", // JSON string for jsonb field
+                    true,
+                    "system",
+                    DateTime.UtcNow,
+                    "system",
+                    DateTime.UtcNow,
+                    false
+                });
         }
 
         /// <inheritdoc />

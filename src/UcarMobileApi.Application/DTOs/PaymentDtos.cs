@@ -6,19 +6,14 @@ namespace UcarMobileApi.Application.DTOs;
 public record PaymentSetupDto(string ClientSecret, string ProviderCustomerId);
 
 /// <summary>
-/// Save the payment method created in the client to the database with confirmSetup.
-/// </summary>
-public record PaymentMethodCreateDto(int ClientId, string ProviderPaymentMethodId, string Brand, string Last4, int ExpMonth, int ExpYear, bool IsDefault);
-
-/// <summary>
 /// DTO used to attach a payment method to a client.
 /// </summary>
-public record PaymentMethodAttachDto(int ClientId, string ProviderPaymentMethodId, bool IsDefault);
+public record PaymentMethodAttachDto(string ProviderPaymentMethodId, bool IsDefault);
 
 /// <summary>
 /// DTO used to create and confirm a payment intent.
 /// </summary>
-public record PaymentCreateDto(int ClientId, int PaymentMethodId, string ProviderPaymentMethodId, string IdempotencyKey, long AmountCents, string Currency = "usd");
+public record PaymentCreateDto(int PaymentMethodId, string ProviderPaymentMethodId, string IdempotencyKey, long AmountCents, string Currency = "usd");
 
 /// <summary>
 /// DTO used to request a refund.
@@ -28,7 +23,7 @@ public record PaymentRefundDto(int PaymentId, long? AmountCents, string Idempote
 /// <summary>
 /// Represents the result of a refund operation.
 /// </summary>
-/// <param name="RefundId">Provider refund identifier (e.g. Stripe refund id).</param>
+/// <param name="ProviderRefundId">Provider refund identifier (e.g. Stripe refund id).</param>
 /// <param name="Status">Refund status from the provider (e.g. succeeded, pending).</param>
 /// <param name="AmountCents">Amount refunded in cents.</param>
 /// <param name="Currency">Currency code (e.g. "usd").</param>

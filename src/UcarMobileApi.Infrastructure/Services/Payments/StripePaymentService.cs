@@ -35,11 +35,11 @@ public class StripePaymentService(AppDbContext context, IMapper mapper, ILogger<
 
     #region Helper methods
 
-    private async Task<string> CreateOrGetCustomerAsync(int clientId, CancellationToken cancellationToken = default)
+    private async Task<string> CreateOrGetCustomerAsync(string authProviderId, CancellationToken cancellationToken = default)
     {
         var client = await context.Set<Client>()
-            .FirstOrDefaultAsync(c => c.Id == clientId, cancellationToken)
-            ?? throw new KeyNotFoundException($"Client with ID {clientId} not found.");
+            .FirstOrDefaultAsync(c => c.AuthProviderId == authProviderId, cancellationToken)
+            ?? throw new KeyNotFoundException($"Client with AuthProviderId {authProviderId} not found.");
 
         return await CreateOrGetCustomerAsync(client, cancellationToken);
     }
@@ -91,9 +91,9 @@ public class StripePaymentService(AppDbContext context, IMapper mapper, ILogger<
 
     #endregion
 
-    public async Task<PaymentSetupDto> CreateSetupIntentAsync(int clientId, CancellationToken cancellationToken = default)
+    public async Task<PaymentSetupDto> CreateSetupIntentAsync(string authProviderId, CancellationToken cancellationToken = default)
     {
-        var customerId = await CreateOrGetCustomerAsync(clientId, cancellationToken);
+        var customerId = await CreateOrGetCustomerAsync(authProviderId, cancellationToken);
 
         var setup = await HandleStripeOperationAsync(
             () => _setupIntentService.CreateAsync(new SetupIntentCreateOptions
@@ -107,42 +107,13 @@ public class StripePaymentService(AppDbContext context, IMapper mapper, ILogger<
         return new PaymentSetupDto(setup.ClientSecret, customerId);
     }
 
-    public async Task<PaymentMethodDto> SavePaymentMethodAsync(PaymentMethodCreateDto dto, CancellationToken cancellationToken = default)
-    {
-        var validator = new PaymentMethodCreateValidator();
-        await validator.ValidateAndThrowAsync(dto, cancellationToken);
-
-        var client = await context.Set<Client>()
-            .FirstOrDefaultAsync(c => c.Id == dto.ClientId, cancellationToken)
-            ?? throw new KeyNotFoundException($"Client with ID {dto.ClientId} not found.");
-
-        if (string.IsNullOrWhiteSpace(client.ProviderPaymentCustomerId))
-            throw new InvalidOperationException("Client does not have a registered Stripe customer ID.");
-
-        var entity = mapper.Map<PaymentMethod>(dto);
-
-        if (dto.IsDefault)
-        {
-            var others = await context.Set<PaymentMethod>()
-                .Where(x => x.ClientId == client.Id)
-                .ToListAsync(cancellationToken);
-            foreach (var other in others)
-                other.IsDefault = false;
-        }
-
-        context.Add(entity);
-        await context.SaveChangesAsync(cancellationToken);
-
-        return mapper.Map<PaymentMethodDto>(entity);
-    }
-
-    public async Task<PaymentMethodDto> AttachPaymentMethodAsync(PaymentMethodAttachDto dto, CancellationToken cancellationToken = default)
+    public async Task<PaymentMethodDto> AttachPaymentMethodAsync(string authProviderId, PaymentMethodAttachDto dto, CancellationToken cancellationToken = default)
     {
         var validator = new AttachPaymentMethodValidator();
         await validator.ValidateAndThrowAsync(dto, cancellationToken);
 
-        var client = await context.Set<Client>().FirstOrDefaultAsync(c => c.Id == dto.ClientId, cancellationToken)
-            ?? throw new KeyNotFoundException($"Client with ID {dto.ClientId} not found.");
+        var client = await context.Set<Client>().FirstOrDefaultAsync(c => c.AuthProviderId == authProviderId, cancellationToken)
+            ?? throw new KeyNotFoundException($"Client with AuthProviderId {authProviderId} not found.");
 
         var customerId = client.ProviderPaymentCustomerId
                          ?? await CreateOrGetCustomerAsync(client, cancellationToken);
@@ -178,13 +149,14 @@ public class StripePaymentService(AppDbContext context, IMapper mapper, ILogger<
     /// Creates and confirms a payment for the specified client using the selected payment method.
     /// Handles Stripe response codes and returns only structured information (no user messages).
     /// </summary>
+    /// <param name="authProviderId">Current user Auth Provider Id</param>
     /// <param name="dto">The DTO containing client ID, payment method ID, amount, and currency.</param>
     /// <param name="cancellationToken">A cancellation token to cancel the operation.</param>
     /// <returns>
     /// A <see cref="PaymentDto"/> representing the result of the payment attempt, including
     /// provider status, client secret (for 3D Secure), and optional error codes.
     /// </returns>
-    public async Task<PaymentDto> CreatePaymentAsync(PaymentCreateDto dto, CancellationToken cancellationToken = default)
+    public async Task<PaymentDto> CreatePaymentAsync(string authProviderId, PaymentCreateDto dto, CancellationToken cancellationToken = default)
     {
         var validator = new CreatePaymentValidator();
         await validator.ValidateAndThrowAsync(dto, cancellationToken);
@@ -198,8 +170,8 @@ public class StripePaymentService(AppDbContext context, IMapper mapper, ILogger<
                 return mapper.Map<PaymentDto>(existing);
         }
 
-        var client = await context.Set<Client>().FirstOrDefaultAsync(c => c.Id == dto.ClientId, cancellationToken)
-            ?? throw new KeyNotFoundException($"Client with ID {dto.ClientId} not found.");
+        var client = await context.Set<Client>().FirstOrDefaultAsync(c => c.AuthProviderId == authProviderId, cancellationToken)
+            ?? throw new KeyNotFoundException($"Client with AuthProviderId {authProviderId} not found.");
 
         if (string.IsNullOrEmpty(client.ProviderPaymentCustomerId))
             throw new InvalidOperationException("Client does not have an associated Stripe customer ID.");
@@ -217,7 +189,7 @@ public class StripePaymentService(AppDbContext context, IMapper mapper, ILogger<
             Confirm = true,
             Metadata = new Dictionary<string, string>
             {
-                { "clientId", dto.ClientId.ToString() },
+                { "clientId", client.Id.ToString() },
                 { "source", "UcarMobile" },
                 { "idempotencyKey", requestOptions.IdempotencyKey }
             }
