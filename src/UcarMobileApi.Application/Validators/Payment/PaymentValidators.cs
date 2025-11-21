@@ -11,7 +11,6 @@ public class CreatePaymentValidator : AbstractValidator<PaymentCreateDto>
     public CreatePaymentValidator()
     {
         RuleFor(x => x.PaymentMethodId).GreaterThan(0).WithMessage(ValidatorErrors.GreaterThanZero);
-        RuleFor(x => x.ProviderPaymentMethodId).NotEmpty().WithMessage(ValidatorErrors.IsRequired);
         RuleFor(x => x.IdempotencyKey).NotEmpty().WithMessage(ValidatorErrors.IsRequired);
         RuleFor(x => x.AmountCents).GreaterThan(0).WithMessage(ValidatorErrors.GreaterThanZero);
     }

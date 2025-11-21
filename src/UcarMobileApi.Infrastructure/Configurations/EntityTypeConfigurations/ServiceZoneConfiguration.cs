@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using UcarMobileApi.Core.Entities.ServiceZone;
+using UcarMobileApi.Core.Entities.Services;
 
 namespace UcarMobileApi.Infrastructure.Configurations.EntityTypeConfigurations;
 

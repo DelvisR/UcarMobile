@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Stripe;
+using UcarMobileApi.Application.Common.Interfaces;
 using UcarMobileApi.Infrastructure.Factories;
-using UcarMobileApi.Infrastructure.Services.Payments;
 
 namespace UcarMobileApi.Controllers.Payments;
 
@@ -13,7 +13,7 @@ namespace UcarMobileApi.Controllers.Payments;
 /// </summary>
 [ApiController]
 [Route("api/payments/webhook")]
-public class StripeWebhookController(StripePaymentWebHookService paymentWebHookService, StripeClientFactory stripeClientFactory, ILogger<StripeWebhookController> logger) : ControllerBase
+public class StripeWebhookController(IPaymentWebHookService paymentWebHookService, StripeClientFactory stripeClientFactory, ILogger<StripeWebhookController> logger) : ControllerBase
 {
     /// <summary>
     /// Handles Stripe webhook requests.
@@ -58,6 +58,7 @@ public class StripeWebhookController(StripePaymentWebHookService paymentWebHookS
         switch (stripeEvent.Type)
         {
             case "payment_intent.succeeded":
+            case "payment_intent.requires_action":
             case "payment_intent.payment_failed":
                 if (stripeEvent.Data.Object is PaymentIntent paymentIntent)
                     await paymentWebHookService.HandlePaymentIntentWebhookAsync(paymentIntent);

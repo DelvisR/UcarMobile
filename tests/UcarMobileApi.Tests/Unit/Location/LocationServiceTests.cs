@@ -39,7 +39,7 @@ namespace UcarMobileApi.Tests.Unit.Location
             // Memory configuration with Google: ApiKey
             var inMemory = new[]
             {
-                new KeyValuePair<string, string>("Google:ApiKey", "")
+                new KeyValuePair<string, string>("Google:ApiKey", "AIzaSyAlSRw9GWf0PpnIzmLXihryBCzB0ONIaqk")
             };
             var configuration = new ConfigurationBuilder().AddInMemoryCollection(inMemory).Build();
 

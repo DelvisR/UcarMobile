@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
@@ -31,7 +32,11 @@ public class AuditInterceptor(IHttpContextAccessor httpContextAccessor) : SaveCh
 
         var entries = context.ChangeTracker.Entries<EntityBase>();
 
-        var modifiedOrCreatedBy = httpContextAccessor?.HttpContext?.User?.Identity?.Name ?? "System";
+        var user = httpContextAccessor?.HttpContext?.User;
+
+        var modifiedOrCreatedBy = user?.Claims.FirstOrDefault(c => c.Type == "given_name")?.Value ??
+                                  user?.Claims.FirstOrDefault(c => c.Type == "email")?.Value ??
+                                  user?.Identity?.Name ?? "System";
 
         foreach (var entry in entries)
         {

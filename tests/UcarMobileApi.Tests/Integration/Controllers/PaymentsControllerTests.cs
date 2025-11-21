@@ -1,315 +1,399 @@
 using System;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestPlatform.TestHost;
 using UcarMobileApi.Application.DTOs;
+using UcarMobileApi.Core.Entities.Clients;
+using UcarMobileApi.Core.Entities.Users;
+using UcarMobileApi.Infrastructure.Data;
+using UcarMobileApi.Tests.TestHelpers;
 using UcarMobileApi.Tests.Unit.Payments;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace UcarMobileApi.Tests.Integration.Controllers;
-
-/// <summary>
-/// Integration tests for PaymentsController
-/// Tests HTTP endpoints with various Stripe test scenarios
-/// </summary>
-public class PaymentsControllerTests(WebApplicationFactory<Program> factory, ITestOutputHelper output) : IClassFixture<WebApplicationFactory<Program>>, IDisposable
+namespace UcarMobileApi.Tests.Integration.Controllers
 {
-    private readonly HttpClient _client = factory.WithWebHostBuilder(builder =>
+    /// <summary>
+    /// Integration tests for PaymentsController
+    /// Tests HTTP endpoints with various Stripe test scenarios
+    /// </summary>
+    public class PaymentsControllerTests : IClassFixture<WebApplicationFactory<Program>>, IDisposable
     {
-        builder.ConfigureServices(services =>
+        private readonly HttpClient _client;
+        private readonly ITestOutputHelper _output;
+        private const string TestAuthProviderId = "test-client-cognito-id-123";
+        private const string TestDbName = "PaymentsTestDb";
+
+        public PaymentsControllerTests(WebApplicationFactory<Program> factory, ITestOutputHelper output)
         {
-            // Add test-specific services here if needed
-            // For example, override Stripe configuration for testing
-        });
-    }).CreateClient();
-    private readonly ITestOutputHelper _output = output;
+            _output = output;
 
-    public static class JsonOptions
-    {
-        public static readonly JsonSerializerOptions CamelCase = new()
+            // Configuración de la fábrica para in-memory DB y seed de datos
+            var factory1 = factory.WithWebHostBuilder(builder =>
+            {
+                builder.ConfigureServices(services =>
+                {
+                    var descriptor = services.SingleOrDefault(d => d.ServiceType == typeof(DbContextOptions<AppDbContext>));
+                    if (descriptor != null)
+                        services.Remove(descriptor);
+
+                    services.AddDbContext<AppDbContext>(options =>
+                    {
+                        options.UseInMemoryDatabase(TestDbName);
+                    });
+
+                    var sp = services.BuildServiceProvider();
+                    using var scope = sp.CreateScope();
+                    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                    SeedTestData(db);
+                });
+            });
+
+            _client = factory1.CreateClient();
+        }
+
+        public static class JsonOptions
         {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-        };
-    }
+            public static readonly JsonSerializerOptions CamelCase = new()
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            };
+        }
 
-    #region Setup Intent Tests
+        #region Setup Intent Tests
 
-    [Fact]
-    public async Task CreateSetupIntent_ValidClientId_ReturnsSuccess()
-    {
-        // Arrange
-        var clientId = await CreateTestClientAsync();
+        [Fact]
+        public async Task CreateSetupIntent_WithAuthenticatedUser_ReturnsSuccess()
+        {
+            await AuthenticateAsTestClientAsync();
 
-        // Act
-        var response = await _client.PostAsync($"/api/payments/setup-intent/{clientId}", null);
+            var response = await _client.PostAsync("/api/payments/setup-intent", null);
 
-        // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+            response.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var content = await response.Content.ReadAsStringAsync();
-        var result = JsonSerializer.Deserialize<PaymentSetupDto>(content, JsonOptions.CamelCase);
+            var content = await response.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<PaymentSetupDto>(content, JsonOptions.CamelCase);
 
-        result.Should().NotBeNull();
-        result.ClientSecret.Should().StartWith("seti_");
-        result.ProviderCustomerId.Should().StartWith("cus_");
+            result.Should().NotBeNull();
+            result!.ClientSecret.Should().StartWith("seti_");
+            result.ProviderCustomerId.Should().StartWith("cus_");
 
-        _output.WriteLine($"SetupIntent created via API: {result.ClientSecret}");
-    }
+            _output.WriteLine($"SetupIntent created via API: {result.ClientSecret}");
+        }
 
-    [Fact]
-    public async Task CreateSetupIntent_InvalidClientId_ReturnsNotFound()
-    {
-        // Arrange
-        var invalidClientId = 99999;
+        [Fact]
+        public async Task CreateSetupIntent_WithoutAuthentication_ReturnsUnauthorized()
+        {
+            var response = await _client.PostAsync("/api/payments/setup-intent", null);
 
-        // Act
-        var response = await _client.PostAsync($"/api/payments/setup-intent/{invalidClientId}", null);
+            response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
 
-        // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+            _output.WriteLine("Setup intent request without authentication correctly returned 401");
+        }
 
-        _output.WriteLine($"Invalid client ID {invalidClientId} correctly returned 404");
-    }
+        #endregion
 
-    #endregion
+        #region Attach Payment Method Tests
 
-    #region Create Payment Tests
+        [Fact]
+        public async Task AttachPaymentMethod_ValidData_ReturnsSuccess()
+        {
+            await AuthenticateAsTestClientAsync();
 
-    [Theory]
-    [InlineData(StripeTestCards.Successful.Visa, "succeeded", null)]
-    [InlineData(StripeTestCards.Successful.Mastercard, "succeeded", null)]
-    [InlineData(StripeTestCards.Declined.Generic, "error", "card_declined")]
-    [InlineData(StripeTestCards.Declined.InsufficientFunds, "error", "insufficient_funds")]
-    [InlineData(StripeTestCards.Declined.ExpiredCard, "error", "expired_card")]
-    public async Task CreatePayment_DifferentTestCards_ReturnsExpectedResults(
-        string paymentMethodId, string expectedStatus, string expectedErrorCode)
-    {
-        // Arrange
-        var clientId = await CreateTestClientAsync();
-        await CreateTestPaymentMethodAsync(clientId, paymentMethodId);
+            var dto = new PaymentMethodAttachDto(
+                ProviderPaymentMethodId: StripeTestCards.Successful.Visa,
+                IsDefault: true
+            );
 
-        var dto = new PaymentCreateDto(
-            ClientId: clientId,
-            PaymentMethodId: 1,
-            ProviderPaymentMethodId: paymentMethodId,
-            IdempotencyKey: $"test-payment-{Guid.NewGuid()}",
-            AmountCents: 2500,
-            Currency: "usd"
-        );
+            var response = await _client.PostAsJsonAsync("/api/payments/attach-method", dto);
 
-        // Act
-        var response = await _client.PostAsJsonAsync("/api/payments/charge", dto);
+            response.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+            var content = await response.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<PaymentMethodDto>(content, JsonOptions.CamelCase);
 
-        var content = await response.Content.ReadAsStringAsync();
-        var result = JsonSerializer.Deserialize<PaymentDto>(content, JsonOptions.CamelCase);
+            result.Should().NotBeNull();
+            result!.Brand.Should().Be("visa");
+            result.Last4.Should().Be("4242");
+            result.IsDefault.Should().BeTrue();
 
-        result.Should().NotBeNull();
-        result.Status.Should().Be(expectedStatus);
-        result.ErrorCode.Should().Be(expectedErrorCode);
-        result.AmountCents.Should().Be(2500);
+            _output.WriteLine($"Payment method attached via API: {result.Brand} ending in {result.Last4}");
+        }
 
-        _output.WriteLine($"Payment test: {paymentMethodId} -> Status: {result.Status}, Error: {result.ErrorCode}");
-    }
+        [Fact]
+        public async Task AttachPaymentMethod_InvalidData_ReturnsBadRequest()
+        {
+            await AuthenticateAsTestClientAsync();
 
-    [Fact]
-    public async Task CreatePayment_AuthenticationRequired_ReturnsClientSecret()
-    {
-        // Arrange
-        var clientId = await CreateTestClientAsync();
-        await CreateTestPaymentMethodAsync(clientId, StripeTestCards.Authentication.Required);
+            var dto = new PaymentMethodAttachDto(
+                ProviderPaymentMethodId: "", // Invalid
+                IsDefault: true
+            );
 
-        var dto = new PaymentCreateDto(
-            ClientId: clientId,
-            PaymentMethodId: 1,
-            ProviderPaymentMethodId: StripeTestCards.Authentication.Required,
-            IdempotencyKey: $"test-3ds-{Guid.NewGuid()}",
-            AmountCents: 3000,
-            Currency: "usd"
-        );
+            var response = await _client.PostAsJsonAsync("/api/payments/attach-method", dto);
 
-        // Act
-        var response = await _client.PostAsJsonAsync("/api/payments/charge", dto);
+            response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
-        // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+            _output.WriteLine("Invalid payment method data correctly returned 400");
+        }
 
-        var content = await response.Content.ReadAsStringAsync();
-        var result = JsonSerializer.Deserialize<PaymentDto>(content, JsonOptions.CamelCase);
+        #endregion
 
-        result.Should().NotBeNull();
-        result.Status.Should().Be("requires_action");
-        result.ErrorCode.Should().Be("authentication_required");
-        result.ClientSecret.Should().NotBeNullOrEmpty();
-        result.ClientSecret.Should().StartWith("pi_");
+        #region Create Payment Tests
 
-        _output.WriteLine($"3DS payment: ClientSecret={result.ClientSecret}");
-    }
+        [Theory]
+        [InlineData(StripeTestCards.Successful.Visa, "succeeded", null)]
+        [InlineData(StripeTestCards.Successful.Mastercard, "succeeded", null)]
+        [InlineData(StripeTestCards.Declined.Generic, "error", "card_declined")]
+        [InlineData(StripeTestCards.Declined.InsufficientFunds, "error", "insufficient_funds")]
+        [InlineData(StripeTestCards.Declined.ExpiredCard, "error", "expired_card")]
+        public async Task CreatePayment_DifferentTestCards_ReturnsExpectedResults(
+            string paymentMethodId, string expectedStatus, string expectedErrorCode)
+        {
+            await AuthenticateAsTestClientAsync();
+            await AttachTestPaymentMethodAsync(paymentMethodId);
 
-    [Fact]
-    public async Task CreatePayment_SameIdempotencyKey_ReturnsSameResult()
-    {
-        // Arrange
-        var clientId = await CreateTestClientAsync();
-        await CreateTestPaymentMethodAsync(clientId, StripeTestCards.Successful.Visa);
+            var dto = new PaymentCreateDto(
+                PaymentMethodId: 1,
+                IdempotencyKey: $"test-payment-{Guid.NewGuid()}",
+                AmountCents: 2500,
+                Currency: "usd"
+            );
 
-        var idempotencyKey = $"test-idempotency-{Guid.NewGuid()}";
-        var dto = new PaymentCreateDto(
-            ClientId: clientId,
-            PaymentMethodId: 1,
-            ProviderPaymentMethodId: StripeTestCards.Successful.Visa,
-            IdempotencyKey: idempotencyKey,
-            AmountCents: 1500,
-            Currency: "usd"
-        );
+            var response = await _client.PostAsJsonAsync("/api/payments/charge", dto);
 
-        // Act - First request
-        var response1 = await _client.PostAsJsonAsync("/api/payments/charge", dto);
-        var content1 = await response1.Content.ReadAsStringAsync();
-        var result1 = JsonSerializer.Deserialize<PaymentDto>(content1, JsonOptions.CamelCase);
+            response.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        // Act - Second request with same idempotency key
-        var response2 = await _client.PostAsJsonAsync("/api/payments/charge", dto);
-        var content2 = await response2.Content.ReadAsStringAsync();
-        var result2 = JsonSerializer.Deserialize<PaymentDto>(content2, JsonOptions.CamelCase);
+            var content = await response.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<PaymentDto>(content, JsonOptions.CamelCase);
 
-        // Assert
-        response1.StatusCode.Should().Be(HttpStatusCode.OK);
-        response2.StatusCode.Should().Be(HttpStatusCode.OK);
-        result1.ProviderPaymentId.Should().Be(result2.ProviderPaymentId);
+            result.Should().NotBeNull();
+            result!.Status.Should().Be(expectedStatus);
+            result.ErrorCode.Should().Be(expectedErrorCode);
+            result.AmountCents.Should().Be(2500);
 
-        _output.WriteLine($"Idempotent payment: {result1.ProviderPaymentId}");
-    }
+            _output.WriteLine($"Payment test: {paymentMethodId} -> Status: {result.Status}, Error: {result.ErrorCode}");
+        }
 
-    #endregion
+        [Fact]
+        public async Task CreatePayment_AuthenticationRequired_ReturnsClientSecret()
+        {
+            await AuthenticateAsTestClientAsync();
+            await AttachTestPaymentMethodAsync(StripeTestCards.Authentication.Required);
 
-    #region Refund Tests
+            var dto = new PaymentCreateDto(
+                PaymentMethodId: 1,
+                IdempotencyKey: $"test-3ds-{Guid.NewGuid()}",
+                AmountCents: 3000,
+                Currency: "usd"
+            );
 
-    [Fact]
-    public async Task RefundPayment_ValidRequest_ReturnsSuccess()
-    {
-        // Arrange
-        var clientId = await CreateTestClientAsync();
-        await CreateTestPaymentMethodAsync(clientId, StripeTestCards.Successful.Visa);
+            var response = await _client.PostAsJsonAsync("/api/payments/charge", dto);
 
-        // Create a payment first
-        var paymentDto = new PaymentCreateDto(
-            ClientId: clientId,
-            PaymentMethodId: 1,
-            ProviderPaymentMethodId: StripeTestCards.Successful.Visa,
-            IdempotencyKey: $"test-payment-{Guid.NewGuid()}",
-            AmountCents: 5000,
-            Currency: "usd"
-        );
+            response.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var paymentResponse = await _client.PostAsJsonAsync("/api/payments/charge", paymentDto);
-        paymentResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+            var content = await response.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<PaymentDto>(content, JsonOptions.CamelCase);
 
-        // Get the payment ID (in real scenario, this would come from database)
-        var paymentId = 1; // Assuming first payment gets ID 1
+            result.Should().NotBeNull();
+            result!.Status.Should().Be("requires_action");
+            result.ErrorCode.Should().Be("authentication_required");
+            result.ClientSecret.Should().NotBeNullOrEmpty();
+            result.ClientSecret.Should().StartWith("pi_");
 
-        var refundDto = new PaymentRefundDto(
-            PaymentId: paymentId,
-            AmountCents: 2000, // Partial refund
-            IdempotencyKey: $"test-refund-{Guid.NewGuid()}"
-        );
+            _output.WriteLine($"3DS payment: ClientSecret={result.ClientSecret}");
+        }
 
-        // Act
-        var response = await _client.PostAsJsonAsync("/api/payments/refund", refundDto);
+        [Fact]
+        public async Task CreatePayment_SameIdempotencyKey_ReturnsSameResult()
+        {
+            await AuthenticateAsTestClientAsync();
+            await AttachTestPaymentMethodAsync(StripeTestCards.Successful.Visa);
 
-        // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+            var idempotencyKey = $"test-idempotency-{Guid.NewGuid()}";
+            var dto = new PaymentCreateDto(
+                PaymentMethodId: 1,
+                IdempotencyKey: idempotencyKey,
+                AmountCents: 1500,
+                Currency: "usd"
+            );
 
-        var content = await response.Content.ReadAsStringAsync();
-        var result = JsonSerializer.Deserialize<PaymentRefundResultDto>(content, JsonOptions.CamelCase);
+            var response1 = await _client.PostAsJsonAsync("/api/payments/charge", dto);
+            var content1 = await response1.Content.ReadAsStringAsync();
+            var result1 = JsonSerializer.Deserialize<PaymentDto>(content1, JsonOptions.CamelCase);
 
-        result.Should().NotBeNull();
-        result.Status.Should().Be("succeeded");
-        result.AmountCents.Should().Be(2000);
+            var response2 = await _client.PostAsJsonAsync("/api/payments/charge", dto);
+            var content2 = await response2.Content.ReadAsStringAsync();
+            var result2 = JsonSerializer.Deserialize<PaymentDto>(content2, JsonOptions.CamelCase);
 
-        _output.WriteLine($"Refund processed: {result.ProviderRefundId}, Amount: ${result.AmountCents / 100.0:F2}");
-    }
+            response1.StatusCode.Should().Be(HttpStatusCode.OK);
+            response2.StatusCode.Should().Be(HttpStatusCode.OK);
+            result1!.ProviderPaymentId.Should().Be(result2!.ProviderPaymentId);
 
-    #endregion
+            _output.WriteLine($"Idempotent payment: {result1.ProviderPaymentId}");
+        }
 
-    #region International Currency Tests
+        #endregion
 
-    [Theory]
-    [InlineData("eur", 2500)]
-    [InlineData("gbp", 2000)]
-    [InlineData("cad", 3000)]
-    public async Task CreatePayment_InternationalCurrencies_ProcessesCorrectly(string currency, long amount)
-    {
-        // Arrange
-        var clientId = await CreateTestClientAsync();
-        await CreateTestPaymentMethodAsync(clientId, StripeTestCards.Successful.Visa);
+        #region Refund Tests
 
-        var dto = new PaymentCreateDto(
-            ClientId: clientId,
-            PaymentMethodId: 1,
-            ProviderPaymentMethodId: StripeTestCards.Successful.Visa,
-            IdempotencyKey: $"test-intl-{currency}-{Guid.NewGuid()}",
-            AmountCents: amount,
-            Currency: currency
-        );
+        [Fact]
+        public async Task RefundPayment_ValidRequest_ReturnsSuccess()
+        {
+            await AuthenticateAsTestClientAsync();
+            await AttachTestPaymentMethodAsync(StripeTestCards.Successful.Visa);
 
-        // Act
-        var response = await _client.PostAsJsonAsync("/api/payments/charge", dto);
+            var paymentDto = new PaymentCreateDto(
+                PaymentMethodId: 1,
+                IdempotencyKey: $"test-payment-{Guid.NewGuid()}",
+                AmountCents: 5000,
+                Currency: "usd"
+            );
 
-        // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+            var paymentResponse = await _client.PostAsJsonAsync("/api/payments/charge", paymentDto);
+            paymentResponse.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var content = await response.Content.ReadAsStringAsync();
-        var result = JsonSerializer.Deserialize<PaymentDto>(content, JsonOptions.CamelCase);
+            var paymentId = 1; // Primer pago
 
-        result.Should().NotBeNull();
-        result.Currency.Should().Be(currency);
-        result.AmountCents.Should().Be(amount);
+            var refundDto = new PaymentRefundDto(
+                PaymentId: paymentId,
+                AmountCents: 2000,
+                IdempotencyKey: $"test-refund-{Guid.NewGuid()}"
+            );
 
-        _output.WriteLine($"International payment: {currency.ToUpper()} {amount / 100.0:F2}");
-    }
+            var response = await _client.PostAsJsonAsync("/api/payments/refund", refundDto);
 
-    #endregion
+            response.StatusCode.Should().Be(HttpStatusCode.OK);
 
-    #region Helper Methods
+            var content = await response.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<PaymentRefundResultDto>(content, JsonOptions.CamelCase);
 
-    private static Task<int> CreateTestClientAsync()
-    {
-        // This would typically create a test client in the database
-        // For now, return a mock client ID
-        // In a real implementation, you'd call your client creation endpoint
-        return Task.FromResult(1);
-    }
+            result.Should().NotBeNull();
+            result!.Status.Should().Be("succeeded");
+            result.AmountCents.Should().Be(2000);
 
-    private async Task CreateTestPaymentMethodAsync(int clientId, string paymentMethodId)
-    {
-        var dto = new PaymentMethodCreateDto(
-            ClientId: clientId,
-            ProviderPaymentMethodId: paymentMethodId,
-            Brand: StripeTestCards.GetBrandForTestCard(paymentMethodId),
-            Last4: StripeTestCards.GetLast4ForTestCard(paymentMethodId),
-            ExpMonth: 12,
-            ExpYear: 2028,
-            IsDefault: true
-        );
+            _output.WriteLine($"Refund processed: {result.ProviderRefundId}, Amount: ${result.AmountCents / 100.0:F2}");
+        }
 
-        var response = await _client.PostAsJsonAsync("/api/payments/save-method", dto);
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-    }
+        #endregion
 
-    #endregion
+        #region International Currency Tests
 
-    public void Dispose()
-    {
-        _client?.Dispose();
-        GC.SuppressFinalize(this);
+        [Theory]
+        [InlineData("eur", 2500)]
+        [InlineData("gbp", 2000)]
+        [InlineData("cad", 3000)]
+        public async Task CreatePayment_InternationalCurrencies_ProcessesCorrectly(string currency, long amount)
+        {
+            await AuthenticateAsTestClientAsync();
+            await AttachTestPaymentMethodAsync(StripeTestCards.Successful.Visa);
+
+            var dto = new PaymentCreateDto(
+                PaymentMethodId: 1,
+                IdempotencyKey: $"test-intl-{currency}-{Guid.NewGuid()}",
+                AmountCents: amount,
+                Currency: currency
+            );
+
+            var response = await _client.PostAsJsonAsync("/api/payments/charge", dto);
+
+            response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+            var content = await response.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<PaymentDto>(content, JsonOptions.CamelCase);
+
+            result.Should().NotBeNull();
+            result!.Currency.Should().Be(currency);
+            result.AmountCents.Should().Be(amount);
+
+            _output.WriteLine($"International payment: {currency.ToUpper()} {amount / 100.0:F2}");
+        }
+
+        #endregion
+
+        #region Helper Methods
+
+        private static void SeedTestData(AppDbContext db)
+        {
+            db.Database.EnsureDeleted();
+            db.Database.EnsureCreated();
+
+            var clientRole = new Role
+            {
+                Id = 1,
+                Name = "Client",
+                Description = "Test client role",
+                CreatedBy = "system",
+                CreatedDate = DateTime.UtcNow,
+                LastModifiedBy = "system",
+                LastModifiedDate = DateTime.UtcNow
+            };
+            db.Set<Role>().Add(clientRole);
+
+            var testClient = new Client
+            {
+                Id = 1,
+                AuthProviderId = TestAuthProviderId,
+                Email = "test.client@example.com",
+                Phone = "1234567890",
+                FirstName = "Test",
+                LastName = "Client",
+                Address = "123 Test Street",
+                IsActive = true,
+                CreatedBy = "system",
+                CreatedDate = DateTime.UtcNow,
+                LastModifiedBy = "system",
+                LastModifiedDate = DateTime.UtcNow
+            };
+            db.Set<Client>().Add(testClient);
+
+            var userRole = new UserRole
+            {
+                UserId = 1,
+                RoleId = 1,
+                CreatedBy = "system",
+                CreatedDate = DateTime.UtcNow,
+                LastModifiedBy = "system",
+                LastModifiedDate = DateTime.UtcNow
+            };
+            db.Set<UserRole>().Add(userRole);
+
+            db.SaveChanges();
+        }
+
+        private Task AuthenticateAsTestClientAsync()
+        {
+            var token = JwtTestTokenGenerator.GenerateToken(TestAuthProviderId);
+            _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            return Task.CompletedTask;
+        }
+
+        private async Task AttachTestPaymentMethodAsync(string paymentMethodId)
+        {
+            var dto = new PaymentMethodAttachDto(
+                ProviderPaymentMethodId: paymentMethodId,
+                IsDefault: true
+            );
+
+            var response = await _client.PostAsJsonAsync("/api/payments/attach-method", dto);
+            response.StatusCode.Should().Be(HttpStatusCode.OK);
+        }
+
+        #endregion
+
+        public void Dispose()
+        {
+            _client?.Dispose();
+            GC.SuppressFinalize(this);
+        }
     }
 }

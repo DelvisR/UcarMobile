@@ -23,7 +23,7 @@ public class RoleService(IAppDbContext context, IMapper mapper)
 
     public async Task<RoleDto?> GetRoleAsync(int id, CancellationToken ct)
     {
-        var role = await context.Set<Role>()
+        var role = await context.Set<Role>().AsNoTracking()
             .FirstOrDefaultAsync(r => r.Id == id, ct);
 
         return role == null ? null : mapper.Map<RoleDto>(role);

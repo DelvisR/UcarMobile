@@ -1,6 +1,6 @@
 using AutoMapper;
 using UcarMobileApi.Application.DTOs.ServiceZone;
-using UcarMobileApi.Core.Entities.ServiceZone;
+using UcarMobileApi.Core.Entities.Services;
 
 namespace UcarMobileApi.Application.Mapping;
 

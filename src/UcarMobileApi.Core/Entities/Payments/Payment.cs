@@ -9,7 +9,9 @@ namespace UcarMobileApi.Core.Entities.Payments;
 public class Payment : EntityBase
 {
     public int ClientId { get; set; }
+    public Client Client { get; set; } = null!;
     public int PaymentMethodId { get; set; }
+    public PaymentMethod PaymentMethod { get; set; } = null!;
     public string ProviderPaymentId { get; set; } = string.Empty; // payment_intent id
     public string? MetadataJson { get; set; }    // traceability
     public long AmountCents { get; set; }
@@ -18,12 +20,8 @@ public class Payment : EntityBase
     public string? ClientSecret { get; init; }
     public string? ErrorCode { get; set; }
 
-    // Navigation properties
-    public virtual PaymentMethod PaymentMethod { get; set; } = null!;
-    public Client Client { get; set; } = null!;
-
     /// <summary>
     /// Collection of refunds related to this payment.
     /// </summary>
-    public ICollection<PaymentRefund> Refunds { get; set; } = new List<PaymentRefund>();
+    public ICollection<PaymentRefund> Refunds { get; set; } = [];
 }

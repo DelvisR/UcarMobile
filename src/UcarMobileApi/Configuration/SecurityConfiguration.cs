@@ -56,7 +56,18 @@ public static class SecurityConfiguration
                     ClockSkew = TimeSpan.FromMinutes(awsSettings.Cognito.ClockSkewMinutes),
                     // Map the token's “sub” to NameIdentifier
                     NameClaimType = "sub",
-                    RoleClaimType = "cognito:groups" // optional, if roles are required from Cognito
+                    RoleClaimType = "cognito:groups", // optional, if roles are required from Cognito
+
+                    // Optional: validate that it is an ID token
+                    //IssuerSigningKeyValidator = (key, token, parameters) =>
+                    //{
+                    //    if (token is JwtSecurityToken jwt)
+                    //    {
+                    //        return jwt.Claims.FirstOrDefault(c => c.Type == "token_use")?.Value == "id";
+                    //    }
+
+                    //    return false;
+                    //}
                 };
 
                 options.Events = new JwtBearerEvents

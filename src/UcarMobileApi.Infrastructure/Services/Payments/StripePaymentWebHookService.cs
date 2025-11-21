@@ -1,7 +1,6 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Stripe;
@@ -14,10 +13,8 @@ namespace UcarMobileApi.Infrastructure.Services.Payments;
 /// <summary>
 /// Handles processing of Stripe webhook events, updating the database accordingly.
 /// </summary>
-public class StripePaymentWebHookService(AppDbContext context, IMapper mapper, ILogger<StripePaymentWebHookService> logger) : IPaymentWebHookService
+public class StripePaymentWebHookService(AppDbContext context, ILogger<StripePaymentWebHookService> logger) : IPaymentWebHookService
 {
-    private readonly IMapper _mapper = mapper;
-
     /// <summary>
     /// Processes Stripe PaymentIntent webhook events (e.g. succeeded or failed).
     /// Updates or creates the corresponding <see cref="Payment"/> record in the database.
@@ -45,6 +42,8 @@ public class StripePaymentWebHookService(AppDbContext context, IMapper mapper, I
 
         await context.SaveChangesAsync(cancellationToken);
         logger.LogInformation("Updated payment {PaymentId} -> {Status}", intent.Id, intent.Status);
+
+        //todo if failed send notification to admins (not implemented here)
     }
 
     /// <summary>

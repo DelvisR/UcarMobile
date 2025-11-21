@@ -1,9 +1,8 @@
 using System.Collections.Generic;
 using UcarMobileApi.Core.Entities.Appointments;
-using UcarMobileApi.Core.Entities.Payments;
 using UcarMobileApi.Core.Entities.Users;
 
-namespace UcarMobileApi.Core.Entities.Clients;
+namespace UcarMobileApi.Core.Entities.Technicians;
 
 /// <summary>
 /// This entity inherits from <see cref="User"/> and is mapped using
@@ -11,7 +10,7 @@ namespace UcarMobileApi.Core.Entities.Clients;
 /// 
 /// In the database:
 /// – The base entity <see cref="User"/> is stored in the table "UserAccount".
-/// – This derived entity is stored in its own table ("Client")
+/// – This derived entity is stored in its own table ("Technician")
 ///   with the same primary key value as the related row in "UserAccount".
 /// – EF Core creates a 1-to-1 relationship between the base and derived tables.
 /// 
@@ -19,14 +18,14 @@ namespace UcarMobileApi.Core.Entities.Clients;
 /// a primary key/foreign key referencing "UserAccount.Id".
 /// </summary>
 
-public class Client : User
+public class Technician : User
 {
-    public string? Address { get; set; }
+    public bool IsFreelance { get; set; } = false;
 
-    public string? ProviderPaymentCustomerId { get; set; }
+    // Navigation property: appointments assigned to this technician
+    public ICollection<AppointmentVehicle> Appointments { get; set; } = [];
 
-    public ICollection<ClientVehicle> Vehicles { get; set; } = [];
-    public ICollection<Appointment> Appointments { get; set; } = [];
-    public ICollection<PaymentMethod> PaymentMethods { get; set; } = [];
-    public ICollection<Payment> Payments { get; set; } = [];
+    // Service Zones
+    public ICollection<TechnicianServiceZone> ServiceZones { get; set; } = [];
+
 }

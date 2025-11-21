@@ -32,6 +32,7 @@ public class PaymentMappingProfile : Profile
 
         CreateMap<PaymentRefund, PaymentRefundResultDto>();
 
+        CreateMap<PaymentMethod, PaymentMethodListDto>();
 
     }
 }

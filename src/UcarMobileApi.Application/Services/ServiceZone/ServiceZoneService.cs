@@ -35,11 +35,11 @@ public class ServiceZoneService(IAppDbContext context, IMapper mapper, ILocation
         if (!string.IsNullOrWhiteSpace(geo.Zip) && !dto.ZipCodes.Contains(geo.Zip))
             dto.ZipCodes.Add(geo.Zip);
 
-        var zone = mapper.Map<Core.Entities.ServiceZone.ServiceZone>(dto);
+        var zone = mapper.Map<Core.Entities.Services.ServiceZone>(dto);
         zone.Lat = geo.Lat;
         zone.Lng = geo.Lng;
 
-        context.Set<Core.Entities.ServiceZone.ServiceZone>().Add(zone);
+        context.Set<Core.Entities.Services.ServiceZone>().Add(zone);
         await context.SaveChangesAsync(ct);
         await cache.InvalidateAsync(CacheKey);
 
@@ -54,7 +54,7 @@ public class ServiceZoneService(IAppDbContext context, IMapper mapper, ILocation
         var validator = new ServiceZoneValidator();
         await validator.ValidateAndThrowAsync(dto, ct);
 
-        var zone = await context.Set<Core.Entities.ServiceZone.ServiceZone>().FirstOrDefaultAsync(z => z.Id == id, ct)
+        var zone = await context.Set<Core.Entities.Services.ServiceZone>().FirstOrDefaultAsync(z => z.Id == id, ct)
             ?? throw new KeyNotFoundException($"ServiceZone with ID {id} not found.");
 
         var geo = await location.GetCoordinatesFromAddressAsync(dto.BaseAddress, ct)
@@ -80,7 +80,7 @@ public class ServiceZoneService(IAppDbContext context, IMapper mapper, ILocation
     {
         var zones = await cache.GetOrSetAsync(
             CacheKey,
-            async () => await context.Set<Core.Entities.ServiceZone.ServiceZone>().AsNoTracking().ToListAsync(ct),
+            async () => await context.Set<Core.Entities.Services.ServiceZone>().AsNoTracking().ToListAsync(ct),
             TimeSpan.FromHours(24), null);
 
         return mapper.Map<List<ServiceZoneDto>>(zones);
@@ -91,7 +91,7 @@ public class ServiceZoneService(IAppDbContext context, IMapper mapper, ILocation
     /// </summary>
     public async Task<ServiceZoneDto?> GetByIdAsync(int id, CancellationToken ct = default)
     {
-        var zone = await context.Set<Core.Entities.ServiceZone.ServiceZone>().FindAsync([id], ct);
+        var zone = await context.Set<Core.Entities.Services.ServiceZone>().FindAsync([id], ct);
         return zone == null ? null : mapper.Map<ServiceZoneDto>(zone);
     }
 

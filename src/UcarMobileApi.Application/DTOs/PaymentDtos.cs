@@ -13,7 +13,7 @@ public record PaymentMethodAttachDto(string ProviderPaymentMethodId, bool IsDefa
 /// <summary>
 /// DTO used to create and confirm a payment intent.
 /// </summary>
-public record PaymentCreateDto(int PaymentMethodId, string ProviderPaymentMethodId, string IdempotencyKey, long AmountCents, string Currency = "usd");
+public record PaymentCreateDto(int PaymentMethodId, string IdempotencyKey, long AmountCents, string Currency = "usd");
 
 /// <summary>
 /// DTO used to request a refund.
@@ -39,6 +39,12 @@ public record PaymentRefundResultDto(string ProviderRefundId, string Status, lon
 /// Represents a saved payment method in the system.
 /// </summary>
 public record PaymentMethodDto(int Id, string Brand, string Last4, int ExpMonth, int ExpYear, bool IsDefault);
+
+/// <summary>
+/// For list payment methods.
+/// </summary>
+public record PaymentMethodListDto(int Id, string Brand, string Last4, bool IsDefault);
+
 
 /// <summary>
 /// Represents a processed payment operation.

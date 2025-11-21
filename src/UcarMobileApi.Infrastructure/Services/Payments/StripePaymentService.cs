@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
+using AutoMapper.QueryableExtensions;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -23,13 +24,23 @@ namespace UcarMobileApi.Infrastructure.Services.Payments;
 /// Stripe-based implementation of <see cref="IPaymentService"/>.
 /// Manages setup intents, payment methods, charges, and refunds using Stripe API.
 /// </summary>
-public class StripePaymentService(AppDbContext context, IMapper mapper, ILogger<StripePaymentService> logger, ICacheService cache) : IPaymentService
+public class StripePaymentService(
+    AppDbContext context,
+    IMapper mapper,
+    ILogger<StripePaymentService> logger,
+    ICacheService cache,
+    CustomerService? customerService = null,
+    SetupIntentService? setupIntentService = null,
+    PaymentMethodService? paymentMethodService = null,
+    PaymentIntentService? paymentIntentService = null,
+    RefundService? refundService = null)
+    : IPaymentService
 {
-    private readonly CustomerService _customerService = new();
-    private readonly SetupIntentService _setupIntentService = new();
-    private readonly PaymentMethodService _paymentMethodService = new();
-    private readonly PaymentIntentService _paymentIntentService = new();
-    private readonly RefundService _refundService = new();
+    private readonly CustomerService _customerService = customerService ?? new CustomerService();
+    private readonly SetupIntentService _setupIntentService = setupIntentService ?? new SetupIntentService();
+    private readonly PaymentMethodService _paymentMethodService = paymentMethodService ?? new PaymentMethodService();
+    private readonly PaymentIntentService _paymentIntentService = paymentIntentService ?? new PaymentIntentService();
+    private readonly RefundService _refundService = refundService ?? new RefundService();
 
     private static readonly TimeSpan IdempotencyTtl = TimeSpan.FromMinutes(15);
 
@@ -91,6 +102,23 @@ public class StripePaymentService(AppDbContext context, IMapper mapper, ILogger<
 
     #endregion
 
+    public async Task<IEnumerable<PaymentMethodListDto>> GetPaymentMethodsAsync(string authProviderId, CancellationToken cancellationToken = default)
+    {
+        var client = await context.Set<Client>()
+            .AsNoTracking()
+            .FirstOrDefaultAsync(c => c.AuthProviderId == authProviderId, cancellationToken);
+
+        if (client == null) return [];
+
+        return await context.Set<PaymentMethod>()
+            .Where(pm => pm.ClientId == client.Id && !pm.IsDeleted)
+            .AsNoTracking()
+            .OrderByDescending(pm => pm.IsDefault)   // default first
+            .ThenBy(pm => pm.Brand)
+            .ProjectTo<PaymentMethodListDto>(mapper.ConfigurationProvider)
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<PaymentSetupDto> CreateSetupIntentAsync(string authProviderId, CancellationToken cancellationToken = default)
     {
         var customerId = await CreateOrGetCustomerAsync(authProviderId, cancellationToken);
@@ -145,6 +173,30 @@ public class StripePaymentService(AppDbContext context, IMapper mapper, ILogger<
         return mapper.Map<PaymentMethodDto>(entity);
     }
 
+    public async Task SetDefaultPaymentMethodAsync(string authProviderId, int paymentMethodId, CancellationToken cancellationToken = default)
+    {
+        var client = await context.Set<Client>()
+                         .AsNoTracking()
+                         .FirstOrDefaultAsync(c => c.AuthProviderId == authProviderId, cancellationToken)
+                     ?? throw new KeyNotFoundException($"Client with AuthProviderId {authProviderId} not found.");
+
+        var belongsToClient = await context.Set<PaymentMethod>()
+            .AnyAsync(pm => pm.Id == paymentMethodId && pm.ClientId == client.Id, cancellationToken);
+
+        if (!belongsToClient)
+            throw new KeyNotFoundException($"PaymentMethod with Id {paymentMethodId} not found for the current user.");
+
+        // Obtener todos los métodos del cliente
+        var allMethods = await context.Set<PaymentMethod>()
+            .Where(pm => pm.ClientId == client.Id)
+            .ToListAsync(cancellationToken);
+
+        foreach (var m in allMethods)
+            m.IsDefault = m.Id == paymentMethodId;
+
+        await context.SaveChangesAsync(cancellationToken);
+    }
+
     /// <summary>
     /// Creates and confirms a payment for the specified client using the selected payment method.
     /// Handles Stripe response codes and returns only structured information (no user messages).
@@ -170,11 +222,17 @@ public class StripePaymentService(AppDbContext context, IMapper mapper, ILogger<
                 return mapper.Map<PaymentDto>(existing);
         }
 
-        var client = await context.Set<Client>().FirstOrDefaultAsync(c => c.AuthProviderId == authProviderId, cancellationToken)
+        var client = await context.Set<Client>()
+                         .AsNoTracking()
+                         .Include(c => c.PaymentMethods)
+                         .FirstOrDefaultAsync(c => c.AuthProviderId == authProviderId, cancellationToken)
             ?? throw new KeyNotFoundException($"Client with AuthProviderId {authProviderId} not found.");
 
         if (string.IsNullOrEmpty(client.ProviderPaymentCustomerId))
             throw new InvalidOperationException("Client does not have an associated Stripe customer ID.");
+
+        var paymentMethod = client.PaymentMethods.FirstOrDefault(pm => pm.Id == dto.PaymentMethodId)
+                            ?? throw new KeyNotFoundException("Payment method not found for this client.");
 
         // Generate RequestOptions with idempotency
         var requestOptions = new RequestOptions { IdempotencyKey = dto.IdempotencyKey };
@@ -182,9 +240,9 @@ public class StripePaymentService(AppDbContext context, IMapper mapper, ILogger<
         var options = new PaymentIntentCreateOptions
         {
             Customer = client.ProviderPaymentCustomerId,
-            PaymentMethod = dto.ProviderPaymentMethodId,
+            PaymentMethod = paymentMethod.ProviderPaymentMethodId,
             Amount = dto.AmountCents,
-            Currency = dto.Currency,
+            Currency = dto.Currency ?? "usd",
             OffSession = true,
             Confirm = true,
             Metadata = new Dictionary<string, string>
@@ -229,7 +287,7 @@ public class StripePaymentService(AppDbContext context, IMapper mapper, ILogger<
         {
             logger.LogError(ex, "Stripe error");
             // We capture the controlled code from the helper and return it to the client.
-            return new PaymentDto("", "error", dto.AmountCents, dto.Currency)
+            return new PaymentDto("", "error", dto.AmountCents, dto.Currency ?? "usd")
             {
                 ErrorCode = ex.Message.Replace("stripe_error:", "")
             };
@@ -237,7 +295,7 @@ public class StripePaymentService(AppDbContext context, IMapper mapper, ILogger<
         catch (ApplicationException ex) when (ex.Message == "internal_error")
         {
             logger.LogError(ex, "Stripe error");
-            return new PaymentDto("", "error", dto.AmountCents, dto.Currency)
+            return new PaymentDto("", "error", dto.AmountCents, dto.Currency ?? "usd")
             {
                 ErrorCode = "internal_error"
             };

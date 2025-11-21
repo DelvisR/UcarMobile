@@ -31,8 +31,7 @@ namespace UcarMobileApi.Tests.Integration.Payments
             _output = output;
             _context = fixture.CreateDbContext();
             _loggerMock = new Mock<ILogger<StripePaymentWebHookService>>();
-            var mapper = fixture.Mapper;
-            _webhookService = new StripePaymentWebHookService(_context, mapper, _loggerMock.Object);
+            _webhookService = new StripePaymentWebHookService(_context, _loggerMock.Object);
         }
 
         #region PaymentIntent Webhook Tests

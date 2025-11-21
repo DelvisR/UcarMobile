@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using UcarMobileApi.Application.DTOs;
@@ -11,6 +12,11 @@ namespace UcarMobileApi.Application.Common.Interfaces;
 public interface IPaymentService
 {
     /// <summary>
+    /// Returns all payment methods for a client.
+    /// </summary>
+    Task<IEnumerable<PaymentMethodListDto>> GetPaymentMethodsAsync(string authProviderId, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Initializes a payment setup process for a client.
     /// This allows the client to register one or more payment methods without being charged.
     /// </summary>
@@ -20,6 +26,8 @@ public interface IPaymentService
     /// Attaches a payment method to a client and saves it in the local database.
     /// </summary>
     Task<PaymentMethodDto> AttachPaymentMethodAsync(string authProviderId, PaymentMethodAttachDto dto, CancellationToken cancellationToken = default);
+
+    Task SetDefaultPaymentMethodAsync(string authProviderId, int paymentMethodId, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Creates and confirms a payment for a specific client.

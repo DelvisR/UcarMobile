@@ -14,7 +14,7 @@ public class ClientProfile : Profile
         CreateMap<Client, ClientDto>()
             .IncludeBase<User, UserDto>() // takes advantage of UserDto mapping
             .ForMember(dest => dest.AuthProviderId, opt => opt.Ignore())
-            .ReverseMap()
-            .ForMember(dest => dest.AuthProviderId, opt => opt.Ignore());
+            .ReverseMap();
+        //.ForMember(dest => dest.AuthProviderId, opt => opt.Ignore());
     }
 }

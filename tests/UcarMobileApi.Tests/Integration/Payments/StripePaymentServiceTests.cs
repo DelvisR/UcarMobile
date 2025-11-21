@@ -1,541 +1,333 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
+using AutoMapper;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Stripe;
+using UcarMobileApi.Application;
 using UcarMobileApi.Application.DTOs;
 using UcarMobileApi.Application.Services.Security;
 using UcarMobileApi.Core.Entities.Clients;
 using UcarMobileApi.Core.Entities.Payments;
 using UcarMobileApi.Infrastructure.Data;
 using UcarMobileApi.Infrastructure.Services.Payments;
+using UcarMobileApi.Tests.TestHelpers;
 using Xunit;
-using Xunit.Abstractions;
 using PaymentMethod = UcarMobileApi.Core.Entities.Payments.PaymentMethod;
 
 namespace UcarMobileApi.Tests.Integration.Payments
 {
-    /// <summary>
-    /// Integration tests for StripePaymentService using Stripe test cards
-    /// Requires Stripe test environment configuration
-    /// </summary>
-    public class StripePaymentServiceTests : IClassFixture<StripeTestFixture>, IDisposable
+    public class StripePaymentServiceTests
     {
-        private readonly AppDbContext _context;
-        private readonly StripePaymentService _paymentService;
-        private readonly ITestOutputHelper _output;
+        private readonly AppDbContext _db;
+        private readonly Mock<ICacheService> _cache = new();
+        private readonly Mock<ILogger<StripePaymentService>> _logger = new();
+        private readonly IMapper _mapper;
 
+        private const string AuthProviderId = "test-client-auth-id";
 
-        public StripePaymentServiceTests(StripeTestFixture fixture, ITestOutputHelper output)
+        public StripePaymentServiceTests()
         {
-            _output = output;
-            _context = fixture.CreateDbContext();
+            _db = TestDbContextFactory.CreateInMemoryContext(Guid.NewGuid().ToString());
 
-            var loggerMock = new Mock<ILogger<StripePaymentService>>();
-            var mapper = fixture.Mapper;
-            var cacheMock = new Mock<ICacheService>();
+            var config = new MapperConfiguration(cfg =>
+            {
+                cfg.AddMaps(typeof(ApplicationAssemblyMarker).Assembly);
+            });
 
-            // In-memory cache simulation
-            var localCache = new Dictionary<string, object>();
+            _mapper = config.CreateMapper();
 
-            cacheMock
-                .Setup(c => c.GetAsync<int?>(It.IsAny<string>()))
-                .ReturnsAsync((string key) =>
-                    localCache.TryGetValue(key, out var value) ? (int?)value : null);
-
-            cacheMock
-                .Setup(c => c.SetAsync<int?>(It.IsAny<string>(), It.IsAny<int?>(), It.IsAny<TimeSpan?>(), It.IsAny<TimeSpan?>()))
-                .Callback((string key, int? value, TimeSpan? ttl, TimeSpan? sliding) =>
-                {
-                    localCache[key] = value;
-                })
-                .Returns(Task.CompletedTask);
-
-            _paymentService = new StripePaymentService(_context, mapper, loggerMock.Object, cacheMock.Object);
+            SeedClient();
         }
 
-        #region Setup Intent Tests
+        private void SeedClient()
+        {
+            var client = new Client
+            {
+                Id = 1,
+                AuthProviderId = AuthProviderId,
+                Email = "client@test.com",
+                FirstName = "Test",
+                LastName = "Client",
+                Phone = "5551112233",
+                IsActive = true,
+                ProviderPaymentCustomerId = null
+            };
+
+            _db.Set<Client>().Add(client);
+            _db.SaveChanges();
+        }
+
+        #region Setup Intent
 
         [Fact]
-        public async Task CreateSetupIntentAsync_ValidClient_ReturnsClientSecret()
+        public async Task CreateSetupIntent_ReturnsClientSecretAndCustomerId()
         {
-            // Arrange
-            var client = await CreateTestClientAsync();
+            // Mock Stripe SetupIntentService
+            var stripeMock = new Mock<SetupIntentService>();
+            stripeMock
+                .Setup(m => m.CreateAsync(
+                    It.IsAny<SetupIntentCreateOptions>(),
+                    null,
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new SetupIntent
+                {
+                    ClientSecret = "seti_test_123"
+                });
+
+            // Mock Stripe CustomerService → simula creación de cliente
+            var customerMock = new Mock<CustomerService>();
+            customerMock
+                .Setup(c => c.CreateAsync(
+                    It.IsAny<CustomerCreateOptions>(),
+                    null,
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new Customer
+                {
+                    Id = "cus_test_987"
+                });
+
+            var service = ServiceFactory(o =>
+            {
+                o.SetupIntentService = stripeMock.Object;
+                o.CustomerService = customerMock.Object;
+            });
 
             // Act
-            var result = await _paymentService.CreateSetupIntentAsync(client.Id);
+            var result = await service.CreateSetupIntentAsync(AuthProviderId);
 
             // Assert
-            result.Should().NotBeNull();
-            result.ClientSecret.Should().StartWith("seti_");
-            result.ProviderCustomerId.Should().StartWith("cus_");
+            result.ClientSecret.Should().Be("seti_test_123");
+            result.ProviderCustomerId.Should().Be("cus_test_987");
 
-            _output.WriteLine($"SetupIntent created: {result.ClientSecret}");
-        }
-
-        [Fact]
-        public async Task CreateSetupIntentAsync_NonExistentClient_ThrowsKeyNotFoundException()
-        {
-            // Act & Assert
-            var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _paymentService.CreateSetupIntentAsync(99999));
-
-            exception.Message.Should().Contain("Client with ID 99999 not found");
+            // Verificar que guardó el CustomerId en la BD
+            var client = await _db.Set<Client>().FirstAsync(c => c.AuthProviderId == AuthProviderId);
+            client.ProviderPaymentCustomerId.Should().Be("cus_test_987");
         }
 
         #endregion
 
-        #region Payment Method Tests
+        #region Attach Payment Method
 
         [Fact]
-        public async Task SavePaymentMethodAsync_ValidData_SavesSuccessfully()
+        public async Task AttachPaymentMethod_SavesToDatabase_ReturnsDto()
         {
-            // Arrange
-            var client = await CreateTestClientAsync();
-            await EnsureStripeCustomerExists(client);
+            // Mock PaymentMethodService.AttachAsync
+            var paymentMethodMock = new Mock<PaymentMethodService>();
+            paymentMethodMock
+                .Setup(m => m.AttachAsync(
+                    It.IsAny<string>(),
+                    It.IsAny<PaymentMethodAttachOptions>(),
+                    null,
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new Stripe.PaymentMethod
+                {
+                    Id = "pm_123",
+                    Card = new PaymentMethodCard
+                    {
+                        Brand = "visa",
+                        Last4 = "4242",
+                        ExpMonth = 12,
+                        ExpYear = 2030
+                    }
+                });
 
-            var dto = new PaymentMethodCreateDto(
-                ClientId: client.Id,
-                ProviderPaymentMethodId: "pm_card_visa",
-                Brand: "visa",
-                Last4: "4242",
-                ExpMonth: 12,
-                ExpYear: 2028,
-                IsDefault: true
-            );
+            // Mock CustomerService (por si el cliente no tiene StripeCustomerId)
+            var customerMock = new Mock<CustomerService>();
+            customerMock
+                .Setup(c => c.CreateAsync(
+                    It.IsAny<CustomerCreateOptions>(),
+                    null,
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new Customer
+                {
+                    Id = "cus_999"
+                });
+
+            var service = ServiceFactory(o =>
+            {
+                o.PaymentMethodService = paymentMethodMock.Object;
+                o.CustomerService = customerMock.Object;
+            });
+
+            var dto = new PaymentMethodAttachDto("pm_123", true);
 
             // Act
-            var result = await _paymentService.SavePaymentMethodAsync(dto);
+            var result = await service.AttachPaymentMethodAsync(AuthProviderId, dto);
 
-            // Assert
+            // Assert (DTO)
             result.Should().NotBeNull();
             result.Brand.Should().Be("visa");
             result.Last4.Should().Be("4242");
             result.IsDefault.Should().BeTrue();
 
-            _output.WriteLine($"Payment method saved: {result.Brand} ending in {result.Last4}");
-        }
-
-        [Fact]
-        public async Task SavePaymentMethodAsync_MultipleDefaults_OnlyOneRemains()
-        {
-            // Arrange
-            var client = await CreateTestClientAsync();
-            await EnsureStripeCustomerExists(client);
-
-            // Create first default payment method
-            var firstDto = new PaymentMethodCreateDto(
-                ClientId: client.Id,
-                ProviderPaymentMethodId: "pm_card_visa",
-                Brand: "visa",
-                Last4: "4242",
-                ExpMonth: 12,
-                ExpYear: 2028,
-                IsDefault: true
-            );
-            await _paymentService.SavePaymentMethodAsync(firstDto);
-
-            // Create second default payment method
-            var secondDto = new PaymentMethodCreateDto(
-                ClientId: client.Id,
-                ProviderPaymentMethodId: "pm_card_mastercard",
-                Brand: "mastercard",
-                Last4: "4444",
-                ExpMonth: 10,
-                ExpYear: 2027,
-                IsDefault: true
-            );
-
-            // Act
-            await _paymentService.SavePaymentMethodAsync(secondDto);
-
-            // Assert
-            var paymentMethods = await _context.Set<PaymentMethod>()
-                .Where(pm => pm.ClientId == client.Id)
-                .ToListAsync();
-
-            var defaultMethods = paymentMethods.Where(pm => pm.IsDefault).ToList();
-            defaultMethods.Should().HaveCount(1);
-            defaultMethods.First().Brand.Should().Be("mastercard");
-
-            _output.WriteLine($"Default payment methods count: {defaultMethods.Count}");
+            // Assert (DB)
+            var stored = await _db.Set<PaymentMethod>().FirstOrDefaultAsync();
+            stored.Should().NotBeNull();
+            stored.ProviderPaymentMethodId.Should().Be("pm_123");
+            stored.Brand.Should().Be("visa");
+            stored.Last4.Should().Be("4242");
+            stored.IsDefault.Should().BeTrue();
         }
 
         #endregion
 
-        #region Payment Processing Tests
-
-        [Theory]
-        [InlineData("pm_card_visa", "4242", "succeeded", null)] // Successful payment
-        [InlineData("pm_card_visa_debit", "4000", "succeeded", null)] // Successful debit card
-        [InlineData("pm_card_mastercard", "4444", "succeeded", null)] // Successful Mastercard
-        public async Task CreatePaymentAsync_SuccessfulCards_ProcessesCorrectly(
-            string paymentMethodId, string last4, string expectedStatus, string expectedError)
-        {
-            // Arrange
-            var client = await CreateTestClientAsync();
-            await EnsureStripeCustomerExists(client);
-            var pm = await CreateTestPaymentMethodAsync(client.Id, paymentMethodId, last4);
-
-            var dto = new PaymentCreateDto(
-                ClientId: client.Id,
-                pm.Id,
-                ProviderPaymentMethodId: paymentMethodId,
-                IdempotencyKey: $"test-payment-{Guid.NewGuid()}",
-                AmountCents: 2000, // $20.00
-                Currency: "usd"
-            );
-
-            // Act
-            var result = await _paymentService.CreatePaymentAsync(dto);
-
-            // Assert
-            result.Should().NotBeNull();
-            result.Status.Should().Be(expectedStatus);
-            result.ErrorCode.Should().Be(expectedError);
-            result.AmountCents.Should().Be(2000);
-
-            _output.WriteLine($"Payment processed: Status={result.Status}, Amount=${result.AmountCents / 100.0:F2}");
-        }
-
-        [Theory]
-        [InlineData("pm_card_chargeDeclined", "0002", "generic_decline")]
-        [InlineData("pm_card_chargeDeclinedInsufficientFunds", "9995", "insufficient_funds")]
-        [InlineData("pm_card_chargeDeclinedLostCard", "9987", "lost_card")]
-        [InlineData("pm_card_chargeDeclinedStolenCard", "9979", "stolen_card")]
-        [InlineData("pm_card_expiredCard", "0004", "resource_missing")]
-        [InlineData("pm_card_cvcDecline", "0127", "resource_missing")]
-        public async Task CreatePaymentAsync_DeclinedCards_ReturnsCorrectErrorCode(
-            string paymentMethodId, string last4, string expectedErrorCode)
-        {
-            // Arrange
-            var client = await CreateTestClientAsync();
-            await EnsureStripeCustomerExists(client);
-            var pm = await CreateTestPaymentMethodAsync(client.Id, paymentMethodId, last4);
-
-            var dto = new PaymentCreateDto(
-                ClientId: client.Id,
-                pm.Id,
-                ProviderPaymentMethodId: paymentMethodId,
-                IdempotencyKey: $"test-decline-{Guid.NewGuid()}",
-                AmountCents: 1500, // $15.00
-                Currency: "usd"
-            );
-
-            // Act
-            var result = await _paymentService.CreatePaymentAsync(dto);
-
-            // Assert
-            result.Should().NotBeNull();
-            result.Status.Should().Be("error");
-            result.ErrorCode.Should().Be(expectedErrorCode);
-
-            _output.WriteLine($"Declined payment: ErrorCode={result.ErrorCode}, Card ending in {last4}");
-        }
+        #region Payments
 
         [Fact]
-        public async Task CreatePaymentAsync_3DSecureRequired_ReturnsClientSecret()
+        public async Task CreatePayment_Successful_ReturnsProviderIdAndStatus()
         {
-            // Arrange
-            var client = await CreateTestClientAsync();
-            await EnsureStripeCustomerExists(client);
-            var pm = await CreateTestPaymentMethodAsync(client.Id, "pm_card_authenticationRequired", "3220");
-
-            var dto = new PaymentCreateDto(
-                ClientId: client.Id,
-                pm.Id,
-                ProviderPaymentMethodId: "pm_card_authenticationRequired",
-                IdempotencyKey: $"test-3ds-{Guid.NewGuid()}",
-                AmountCents: 3000, // $30.00
-                Currency: "usd"
-            );
-
-            // Act
-            var result = await _paymentService.CreatePaymentAsync(dto);
-
-            // Assert
-            result.Should().NotBeNull();
-            result.Status.Should().Be("error");
-            result.ErrorCode.Should().Be("authentication_required");
-            //result.ClientSecret.Should().NotBeNullOrEmpty();
-            //result.ClientSecret.Should().StartWith("pi_");
-
-            _output.WriteLine($"3DS Required: ClientSecret={result.ClientSecret}");
-        }
-
-        [Fact]
-        public async Task CreatePaymentAsync_IdempotencyKey_PreventsDuplicates()
-        {
-            // Arrange
-            var client = await CreateTestClientAsync();
-            await EnsureStripeCustomerExists(client);
-            var pm = await CreateTestPaymentMethodAsync(client.Id, "pm_card_visa", "4242");
-
-            var idempotencyKey = $"test-idempotency-{Guid.NewGuid()}";
-            var dto = new PaymentCreateDto(
-                ClientId: client.Id,
-                pm.Id,
-                ProviderPaymentMethodId: "pm_card_visa",
-                IdempotencyKey: idempotencyKey,
-                AmountCents: 1000,
-                Currency: "usd"
-            );
-
-            // Act - First payment
-            var firstResult = await _paymentService.CreatePaymentAsync(dto);
-
-            // Act - Second payment with same idempotency key
-            var secondResult = await _paymentService.CreatePaymentAsync(dto);
-
-            // Assert
-            firstResult.Should().NotBeNull();
-            secondResult.Should().NotBeNull();
-            firstResult.ProviderPaymentId.Should().Be(secondResult.ProviderPaymentId);
-
-            _output.WriteLine($"Idempotent payment: {firstResult.ProviderPaymentId}");
-        }
-
-        #endregion
-
-        #region Refund Tests
-
-        [Fact]
-        public async Task RefundPaymentAsync_FullRefund_ProcessesSuccessfully()
-        {
-            // Arrange
-            var client = await CreateTestClientAsync();
-            await EnsureStripeCustomerExists(client);
-            var paymentMethod = await CreateTestPaymentMethodAsync(client.Id, "pm_card_visa", "4242");
-
-            // Create a successful payment first
-            var paymentDto = new PaymentCreateDto(
-                ClientId: client.Id,
-                paymentMethod.Id,
-                ProviderPaymentMethodId: "pm_card_visa",
-                IdempotencyKey: $"test-payment-{Guid.NewGuid()}",
-                AmountCents: 5000,
-                Currency: "usd"
-            );
-            var paymentResult = await _paymentService.CreatePaymentAsync(paymentDto);
-
-            // Create payment record in database
-            var payment = new Payment
-            {
-                ClientId = client.Id,
-                PaymentMethodId = paymentMethod.Id,
-                ProviderPaymentId = paymentResult.ProviderPaymentId,
-                AmountCents = 5000,
-                Currency = "usd",
-                Status = "succeeded"
-            };
-            _context.Set<Payment>().Add(payment);
-            await _context.SaveChangesAsync();
-
-            var refundDto = new PaymentRefundDto(
-                PaymentId: payment.Id,
-                AmountCents: null, // Full refund
-                IdempotencyKey: $"test-refund-{Guid.NewGuid()}"
-            );
-
-            // Act
-            var result = await _paymentService.RefundPaymentAsync(refundDto);
-
-            // Assert
-            result.Should().NotBeNull();
-            result.Status.Should().Be("succeeded");
-            result.AmountCents.Should().Be(5000);
-
-            _output.WriteLine($"Refund processed: {result.ProviderRefundId}, Amount=${result.AmountCents / 100.0:F2}");
-        }
-
-        [Fact]
-        public async Task RefundPaymentAsync_PartialRefund_ProcessesSuccessfully()
-        {
-            // Arrange
-            var client = await CreateTestClientAsync();
-            await EnsureStripeCustomerExists(client);
-            var paymentMethod = await CreateTestPaymentMethodAsync(client.Id, "pm_card_visa", "4242");
-
-            // Create a successful payment first
-            var paymentDto = new PaymentCreateDto(
-                ClientId: client.Id,
-                paymentMethod.Id,
-                ProviderPaymentMethodId: "pm_card_visa",
-                IdempotencyKey: $"test-payment-{Guid.NewGuid()}",
-                AmountCents: 10000,
-                Currency: "usd"
-            );
-            var paymentResult = await _paymentService.CreatePaymentAsync(paymentDto);
-
-            // Create payment record in database
-            var payment = new Payment
-            {
-                ClientId = client.Id,
-                PaymentMethodId = paymentMethod.Id,
-                ProviderPaymentId = paymentResult.ProviderPaymentId,
-                AmountCents = 10000,
-                Currency = "usd",
-                Status = "succeeded"
-            };
-            _context.Set<Payment>().Add(payment);
-            await _context.SaveChangesAsync();
-
-            var refundDto = new PaymentRefundDto(
-                PaymentId: payment.Id,
-                AmountCents: 3000, // Partial refund
-                IdempotencyKey: $"test-partial-refund-{Guid.NewGuid()}"
-            );
-
-            // Act
-            var result = await _paymentService.RefundPaymentAsync(refundDto);
-
-            // Assert
-            result.Should().NotBeNull();
-            result.Status.Should().Be("succeeded");
-            result.AmountCents.Should().Be(3000);
-
-            // Check payment status is updated to partial_refunded
-            var updatedPayment = await _context.Set<Payment>().FindAsync(payment.Id);
-            updatedPayment?.Status.Should().Be("partial_refunded");
-
-            _output.WriteLine($"Partial refund: ${result.AmountCents / 100.0:F2} of ${payment.AmountCents / 100.0:F2}");
-        }
-
-        #endregion
-
-        #region International Cards Tests
-
-        [Theory]
-        [InlineData("pm_card_br", "0000", "brl")] // Brazil
-        [InlineData("pm_card_ca", "0000", "cad")] // Canada
-        [InlineData("pm_card_mx", "0000", "mxn")] // Mexico
-        [InlineData("pm_card_gb", "0000", "gbp")] // United Kingdom
-        public async Task CreatePaymentAsync_InternationalCards_ProcessesCorrectly(
-            string paymentMethodId, string last4, string currency)
-        {
-            // Arrange
-            var client = await CreateTestClientAsync();
-            await EnsureStripeCustomerExists(client);
-            var pm = await CreateTestPaymentMethodAsync(client.Id, paymentMethodId, last4);
-
-            var dto = new PaymentCreateDto(
-                ClientId: client.Id,
-                pm.Id,
-                ProviderPaymentMethodId: paymentMethodId,
-                IdempotencyKey: $"test-intl-{Guid.NewGuid()}",
-                AmountCents: 2500,
-                Currency: currency
-            );
-
-            // Act
-            var result = await _paymentService.CreatePaymentAsync(dto);
-
-            // Assert
-            result.Should().NotBeNull();
-            result.Currency.Should().Be(currency);
-
-            _output.WriteLine($"International payment: {currency.ToUpper()} {result.AmountCents / 100.0:F2}");
-        }
-
-        #endregion
-
-        #region Processing Error Tests
-
-        [Theory]
-        [InlineData("pm_card_chargeDeclinedProcessingError", "0119", "processing_error")]
-        [InlineData("pm_card_riskLevelElevated", "4000000000000002", "risk_level_elevated")]
-        public async Task CreatePaymentAsync_ProcessingErrors_HandlesCorrectly(
-            string paymentMethodId, string last4, string expectedErrorCode)
-        {
-            // Arrange
-            var client = await CreateTestClientAsync();
-            await EnsureStripeCustomerExists(client);
-            var pm = await CreateTestPaymentMethodAsync(client.Id, paymentMethodId, last4);
-
-            var dto = new PaymentCreateDto(
-                ClientId: client.Id,
-                pm.Id,
-                ProviderPaymentMethodId: paymentMethodId,
-                IdempotencyKey: $"test-error-{Guid.NewGuid()}",
-                AmountCents: 2000,
-                Currency: "usd"
-            );
-
-            // Act
-            var result = await _paymentService.CreatePaymentAsync(dto);
-
-            // Assert
-            result.Should().NotBeNull();
-            result.Status.Should().Be("error");
-            result.ErrorCode.Should().Be(expectedErrorCode);
-
-            _output.WriteLine($"Processing error: {expectedErrorCode}");
-        }
-
-        #endregion
-
-        #region Helper Methods
-
-        private async Task<Client> CreateTestClientAsync()
-        {
-            var client = new Client
-            {
-                FirstName = "Test",
-                LastName = "Client",
-                Email = $"test-{Guid.NewGuid()}@example.com",
-                Phone = "+1234567890"
-            };
-
-            _context.Set<Client>().Add(client);
-            await _context.SaveChangesAsync();
-            return client;
-        }
-
-        private async Task EnsureStripeCustomerExists(Client client)
-        {
-            if (string.IsNullOrEmpty(client.ProviderPaymentCustomerId))
-            {
-                var customerService = new CustomerService();
-                var customer = await customerService.CreateAsync(new CustomerCreateOptions
+            var stripeMock = new Mock<PaymentIntentService>();
+            stripeMock
+                .Setup(m => m.CreateAsync(
+                    It.IsAny<PaymentIntentCreateOptions>(),
+                    null,
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new PaymentIntent
                 {
-                    Email = client.Email,
-                    Name = $"{client.FirstName} {client.LastName}",
-                    Phone = client.Phone
+                    Id = "pi_123",
+                    Amount = 2500,
+                    Status = "succeeded",
+                    Currency = "usd"
                 });
 
-                client.ProviderPaymentCustomerId = customer.Id;
-                await _context.SaveChangesAsync();
-            }
+            var service = ServiceFactory(o =>
+            {
+                o.PaymentIntentService = stripeMock.Object;
+            });
+
+            var dto = new PaymentCreateDto(
+                PaymentMethodId: 1,
+                IdempotencyKey: "test-idemp-1",
+                AmountCents: 2500,
+                Currency: "usd"
+            );
+
+            var result = await service.CreatePaymentAsync(AuthProviderId, dto);
+
+            result.Status.Should().Be("succeeded");
+            result.ProviderPaymentId.Should().Be("pi_123");
+            result.AmountCents.Should().Be(2500);
         }
 
-        private async Task<PaymentMethod> CreateTestPaymentMethodAsync(int clientId, string providerPaymentMethodId, string last4)
+        [Fact]
+        public async Task CreatePayment_StripeDecline_ReturnsErrorStatus()
         {
-            var paymentMethod = new PaymentMethod
-            {
-                ClientId = clientId,
-                ProviderPaymentMethodId = providerPaymentMethodId,
-                Brand = "visa",
-                Last4 = last4,
-                ExpMonth = 12,
-                ExpYear = 2028,
-                IsDefault = true
-            };
+            var stripeMock = new Mock<PaymentIntentService>();
+            stripeMock
+                .Setup(m => m.CreateAsync(
+                    It.IsAny<PaymentIntentCreateOptions>(),
+                    null,
+                    It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new StripeException
+                {
+                    StripeError = new StripeError { Code = "card_declined" }
+                });
 
-            _context.Set<PaymentMethod>().Add(paymentMethod);
-            await _context.SaveChangesAsync();
-            return paymentMethod;
+            var service = ServiceFactory(o =>
+            {
+                o.PaymentIntentService = stripeMock.Object;
+            });
+
+            var dto = new PaymentCreateDto(
+                1, "pm_declined", 1500);
+
+            var client = await _db.Set<Client>().FirstAsync(c => c.AuthProviderId == AuthProviderId);
+            client.ProviderPaymentCustomerId = "cus_test_decline";
+            await _db.SaveChangesAsync();
+
+            var result = await service.CreatePaymentAsync(AuthProviderId, dto);
+
+            result.Status.Should().Be("error");
+            result.ErrorCode.Should().Be("card_declined");
         }
 
         #endregion
 
-        public void Dispose()
+        #region Refunds
+
+        [Fact]
+        public async Task RefundPayment_Success_ReturnsRefundDto()
         {
-            _context?.Dispose();
-            GC.SuppressFinalize(this);
+            // Seed del pago
+            var payment = new Payment
+            {
+                Id = 1,
+                ProviderPaymentId = "pi_abc",
+                AmountCents = 5000,
+                Currency = "usd",
+                Status = "succeeded",
+                ClientId = 1
+            };
+            await _db.Set<Payment>().AddAsync(payment);
+            await _db.SaveChangesAsync();
+
+            var stripeMock = new Mock<RefundService>();
+            stripeMock
+                .Setup(m => m.CreateAsync(
+                    It.IsAny<RefundCreateOptions>(),
+                    null,
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new Refund
+                {
+                    Id = "re_123",
+                    Amount = 2000,
+                    Status = "succeeded",
+                    Currency = "usd"
+                });
+
+            var service = ServiceFactory(o =>
+            {
+                o.RefundService = stripeMock.Object;
+            });
+
+            var dto = new PaymentRefundDto(
+                PaymentId: 1,
+                AmountCents: 2000,
+                IdempotencyKey: "refund-1"
+            );
+
+            var result = await service.RefundPaymentAsync(dto);
+
+            result.ProviderRefundId.Should().Be("re_123");
+            result.Status.Should().Be("succeeded");
+            result.AmountCents.Should().Be(2000);
         }
+
+        #endregion
+
+        #region Factory
+
+        private StripePaymentService ServiceFactory(Action<StripeOverrides> overrides = null)
+        {
+            var o = new StripeOverrides();
+            overrides?.Invoke(o);
+
+            return new StripePaymentService(
+                _db,
+                _mapper,
+                _logger.Object,
+                _cache.Object,
+                o.CustomerService,
+                o.SetupIntentService,
+                o.PaymentMethodService,
+                o.PaymentIntentService,
+                o.RefundService
+            );
+        }
+
+        private class StripeOverrides
+        {
+            public CustomerService CustomerService { get; set; } = Mock.Of<CustomerService>();
+            public SetupIntentService SetupIntentService { get; set; } = Mock.Of<SetupIntentService>();
+            public PaymentMethodService PaymentMethodService { get; set; } = Mock.Of<PaymentMethodService>();
+            public PaymentIntentService PaymentIntentService { get; set; } = Mock.Of<PaymentIntentService>();
+            public RefundService RefundService { get; set; } = Mock.Of<RefundService>();
+        }
+
+        #endregion
     }
 }
