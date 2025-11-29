@@ -1,5 +1,6 @@
 using FluentValidation;
 using UcarMobileApi.Application.DTOs.Users;
+using UcarMobileApi.Application.Validators.Common;
 
 namespace UcarMobileApi.Application.Validators.Users;
 

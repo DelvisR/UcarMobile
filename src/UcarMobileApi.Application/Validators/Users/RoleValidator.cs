@@ -4,6 +4,7 @@ using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using UcarMobileApi.Application.Common.Interfaces;
 using UcarMobileApi.Application.DTOs.Users;
+using UcarMobileApi.Application.Validators.Common;
 using UcarMobileApi.Core.Entities.Users;
 
 namespace UcarMobileApi.Application.Validators.Users;

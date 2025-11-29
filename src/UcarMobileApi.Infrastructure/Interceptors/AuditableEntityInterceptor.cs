@@ -30,7 +30,7 @@ public class AuditInterceptor(IHttpContextAccessor httpContextAccessor) : SaveCh
     {
         if (context == null) return;
 
-        var entries = context.ChangeTracker.Entries<EntityBase>();
+        var entries = context.ChangeTracker.Entries<AuditableEntity>();
 
         var user = httpContextAccessor?.HttpContext?.User;
 

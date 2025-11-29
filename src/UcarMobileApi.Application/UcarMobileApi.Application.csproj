@@ -1,8 +1,15 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591</NoWarn>
   </PropertyGroup>
+  <ItemGroup>
+    <Compile Remove="Services\Configurations\**" />
+    <EmbeddedResource Remove="Services\Configurations\**" />
+    <None Remove="Services\Configurations\**" />
+  </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\UcarMobileApi.Core\UcarMobileApi.Core.csproj" />
   </ItemGroup>

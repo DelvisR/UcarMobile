@@ -46,16 +46,6 @@ public class AppointmentConfiguration : IEntityTypeConfiguration<Appointment>
             .HasForeignKey(av => av.AppointmentId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        builder.HasMany(a => a.Services)
-            .WithOne(s => s.Appointment)
-            .HasForeignKey(av => av.AppointmentId)
-            .OnDelete(DeleteBehavior.Cascade);
-
-        builder.HasMany(a => a.Parts)
-            .WithOne(ap => ap.Appointment)
-            .HasForeignKey(ap => ap.AppointmentId)
-            .OnDelete(DeleteBehavior.Cascade);
-
         builder.HasMany(a => a.Notes)
             .WithOne(an => an.Appointment)
             .HasForeignKey(an => an.AppointmentId)
@@ -66,14 +56,13 @@ public class AppointmentConfiguration : IEntityTypeConfiguration<Appointment>
             .HasForeignKey(ad => ad.AppointmentId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        //builder.HasMany(a => a.Payments)
-        //    .WithOne(p => p.Appointment)
-        //    .HasForeignKey(p => p.AppointmentId)
-        //    .OnDelete(DeleteBehavior.Cascade);
+        // NOTE: The relationship with Payments is configured in PaymentConfiguration.cs
+        // to use DeleteBehavior.SetNull (preserving payment history if appointment is deleted)
 
         // Indexes
         builder.HasIndex(a => a.ClientId);
         builder.HasIndex(a => a.Status);
+        builder.HasIndex(a => a.PaymentStatus); // Index for fast filtering by payment status
         builder.HasIndex(a => a.ScheduledStart);
         builder.HasIndex(a => new { a.Lat, a.Lng });
     }

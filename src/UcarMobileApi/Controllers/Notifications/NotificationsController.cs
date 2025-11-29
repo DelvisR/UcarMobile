@@ -1,7 +1,7 @@
 // Presentation/Controllers/NotificationsController.cs
 
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using UcarMobileApi.Authorization;
 using UcarMobileApi.Core.Entities.Notifications;
 using UcarMobileApi.Infrastructure.Services.Notifications;
 
@@ -14,14 +14,15 @@ namespace UcarMobileApi.Controllers.Notifications;
 /// </summary>
 [ApiController]
 [Route("api/notifications")]
-[AllowAnonymous]
 public class NotificationsController(NotificationQueuePublisher publisher, ILogger<NotificationsController> logger) : ControllerBase
 {
     /// <summary>
     /// Enqueue an email notification for asynchronous delivery.
+    /// Requires 'ACTION_SEND_NOTIFICATION' action.
     /// <response code="202">Returns Accepted.</response>
     /// </summary>
     [HttpPost("email")]
+    [RequireAction("ACTION_SEND_NOTIFICATION")]
     [ProducesResponseType(StatusCodes.Status202Accepted)]
     public async Task<IActionResult> SendEmail([FromBody] EmailMessage request, CancellationToken ct)
     {
@@ -40,9 +41,11 @@ public class NotificationsController(NotificationQueuePublisher publisher, ILogg
 
     /// <summary>
     /// Enqueue an SMS notification for asynchronous delivery.
+    /// Requires 'ACTION_SEND_NOTIFICATION' action.
     /// <response code="202">Returns Accepted.</response>
     /// </summary>
     [HttpPost("sms")]
+    [RequireAction("ACTION_SEND_NOTIFICATION")]
     [ProducesResponseType(StatusCodes.Status202Accepted)]
     public async Task<IActionResult> SendSms([FromBody] SmsMessage request, CancellationToken ct)
     {
@@ -61,9 +64,11 @@ public class NotificationsController(NotificationQueuePublisher publisher, ILogg
 
     /// <summary>
     /// Enqueue a push notification for asynchronous delivery.
+    /// Requires 'ACTION_SEND_NOTIFICATION' action.
     /// <response code="202">Returns Accepted.</response>
     /// </summary>
     [HttpPost("push")]
+    [RequireAction("ACTION_SEND_NOTIFICATION")]
     [ProducesResponseType(StatusCodes.Status202Accepted)]
     public async Task<IActionResult> SendPush([FromBody] PushMessage request, CancellationToken ct)
     {

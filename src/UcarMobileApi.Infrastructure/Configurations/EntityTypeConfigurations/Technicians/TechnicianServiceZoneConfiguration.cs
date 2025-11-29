@@ -11,6 +11,9 @@ public class TechnicianServiceZoneConfiguration : IEntityTypeConfiguration<Techn
 {
     public void Configure(EntityTypeBuilder<TechnicianServiceZone> builder)
     {
+        // Composite PK
+        builder.HasKey(x => new { x.TechnicianId, x.ServiceZoneId });
+
         // Properties
         builder.Property(tsz => tsz.IsPrimaryZone)
             .IsRequired()
@@ -26,18 +29,5 @@ public class TechnicianServiceZoneConfiguration : IEntityTypeConfiguration<Techn
             .WithMany(sz => sz.Technicians)
             .HasForeignKey(tsz => tsz.ServiceZoneId)
             .OnDelete(DeleteBehavior.Cascade);
-
-        // Indexes
-        builder.HasIndex(tsz => tsz.TechnicianId);
-        builder.HasIndex(tsz => tsz.ServiceZoneId);
-        builder.HasIndex(tsz => tsz.IsPrimaryZone);
-
-        // Composite unique constraint
-        builder.HasIndex(tsz => new { tsz.TechnicianId, tsz.ServiceZoneId }).IsUnique();
-
-        // Ensure only one primary zone per technician
-        builder.HasIndex(tsz => new { tsz.TechnicianId, tsz.IsPrimaryZone })
-            .HasFilter("\"IsPrimaryZone\" = true")
-            .IsUnique();
     }
 }

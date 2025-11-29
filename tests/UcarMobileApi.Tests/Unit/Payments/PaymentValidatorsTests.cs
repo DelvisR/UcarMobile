@@ -1,6 +1,6 @@
 using FluentValidation.TestHelper;
-using UcarMobileApi.Application.DTOs;
-using UcarMobileApi.Application.Validators.Payment;
+using UcarMobileApi.Application.DTOs.Payments;
+using UcarMobileApi.Application.Validators;
 using Xunit;
 using Xunit.Abstractions;
 

@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Stripe;
 using UcarMobileApi.Application;
-using UcarMobileApi.Application.DTOs;
+using UcarMobileApi.Application.DTOs.Payments;
 using UcarMobileApi.Application.Services.Security;
 using UcarMobileApi.Core.Entities.Clients;
 using UcarMobileApi.Core.Entities.Payments;

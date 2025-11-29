@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using UcarMobileApi.Application.DTOs;
-using UcarMobileApi.Application.Services.Configurations;
+using UcarMobileApi.Application.Services;
 using UcarMobileApi.Authorization;
 
 namespace UcarMobileApi.Controllers.Configurations;

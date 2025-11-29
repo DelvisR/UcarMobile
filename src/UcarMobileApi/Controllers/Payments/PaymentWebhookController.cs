@@ -29,6 +29,10 @@ public class StripeWebhookController(IPaymentWebHookService paymentWebHookServic
     public async Task<IActionResult> Handle()
     {
         var json = await new StreamReader(HttpContext.Request.Body).ReadToEndAsync();
+
+        if (string.IsNullOrEmpty(json))
+            return BadRequest();
+
         var secret = await stripeClientFactory.GetWebhookSecretAsync();
 
         if (string.IsNullOrWhiteSpace(secret))
@@ -69,6 +73,18 @@ public class StripeWebhookController(IPaymentWebHookService paymentWebHookServic
             case "refund.failed":
                 if (stripeEvent.Data.Object is Refund refund)
                     await paymentWebHookService.HandleRefundWebhookAsync(refund);
+                break;
+
+            case "account.updated":
+                if (stripeEvent.Data.Object is Account account)
+                    await paymentWebHookService.HandleAccountUpdatedAsync(account);
+                break;
+
+            case "payout.paid":
+            case "payout.failed":
+            case "payout.canceled":
+                if (stripeEvent.Data.Object is Payout payout)
+                    await paymentWebHookService.HandlePayoutWebhookAsync(payout);
                 break;
 
             default:

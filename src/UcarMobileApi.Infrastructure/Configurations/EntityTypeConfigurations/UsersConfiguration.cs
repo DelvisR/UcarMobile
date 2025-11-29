@@ -22,7 +22,7 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(u => u.LastName).HasMaxLength(50).IsRequired();
         builder.Property(u => u.Email).HasMaxLength(256).IsRequired();
         builder.Property(x => x.Phone).HasMaxLength(10).IsRequired();
-        builder.Property(u => u.AuthProviderId).HasMaxLength(256).IsRequired();
+        builder.Property(u => u.AuthProviderId).HasMaxLength(256);
         builder.Property(x => x.LangKey).HasMaxLength(6).HasDefaultValue("en");
         builder.Property(u => u.IsActive).IsRequired().HasDefaultValue(false);
     }
@@ -58,6 +58,8 @@ public class UserRoleConfiguration : IEntityTypeConfiguration<UserRole>
 {
     public void Configure(EntityTypeBuilder<UserRole> builder)
     {
+        builder.HasKey(ur => new { ur.UserId, ur.RoleId });
+
         builder.HasOne(ur => ur.User).WithMany(u => u.UserRoles).HasForeignKey(ur => ur.UserId).OnDelete(DeleteBehavior.Cascade);
         builder.HasOne(ur => ur.Role).WithMany(r => r.UserRoles).HasForeignKey(ur => ur.RoleId).OnDelete(DeleteBehavior.Cascade);
     }

@@ -55,7 +55,14 @@ public class PaymentConfiguration : IEntityTypeConfiguration<Payment>
             .HasForeignKey(r => r.PaymentId)
             .OnDelete(DeleteBehavior.Cascade);
 
+        // Relationship with Appointment (optional)
+        builder.HasOne(x => x.Appointment)
+            .WithMany(a => a.Payments)
+            .HasForeignKey(x => x.AppointmentId)
+            .OnDelete(DeleteBehavior.SetNull);
+
         // Optional: unique index on provider payment ID
         builder.HasIndex(x => x.ProviderPaymentId).IsUnique();
+        builder.HasIndex(x => x.AppointmentId);
     }
 }

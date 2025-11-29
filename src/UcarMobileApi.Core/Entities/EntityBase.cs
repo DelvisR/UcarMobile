@@ -2,12 +2,22 @@ using System;
 
 namespace UcarMobileApi.Core.Entities;
 
-public abstract class EntityBase
+public abstract class AuditableEntity
 {
-    public int Id { get; set; }
     public string CreatedBy { get; set; } = string.Empty;
     public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
     public string LastModifiedBy { get; set; } = string.Empty;
     public DateTime LastModifiedDate { get; set; } = DateTime.UtcNow;
+}
+
+
+public abstract class EntityBase : AuditableEntity
+{
+    public int Id { get; set; }
     public bool IsDeleted { get; set; }
+}
+
+public abstract class ActivableEntity : EntityBase
+{
+    public bool IsActive { get; set; }
 }

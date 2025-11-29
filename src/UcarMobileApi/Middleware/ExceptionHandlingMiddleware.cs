@@ -104,6 +104,15 @@ namespace UcarMobileApi.Middleware
                     };
                     break;
 
+                case BusinessException businessExceptionEx:
+                    statusCode = (int)HttpStatusCode.FailedDependency;
+                    response = new
+                    {
+                        message = businessExceptionEx?.Message ?? "A business rule was violated.",
+                        traceId = context.TraceIdentifier
+                    };
+                    break;
+
                 case DbUpdateException dbEx: // For PostgreSQL/EF-related database errors
                     statusCode = (int)HttpStatusCode.InternalServerError;
                     response = new

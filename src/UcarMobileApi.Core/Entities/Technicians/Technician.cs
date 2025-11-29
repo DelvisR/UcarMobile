@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UcarMobileApi.Core.Entities.Appointments;
+using UcarMobileApi.Core.Entities.Payments;
 using UcarMobileApi.Core.Entities.Users;
 
 namespace UcarMobileApi.Core.Entities.Technicians;
@@ -27,5 +28,27 @@ public class Technician : User
 
     // Service Zones
     public ICollection<TechnicianServiceZone> ServiceZones { get; set; } = [];
+
+    // Specialities
+    public ICollection<TechnicianSpeciality> Specialities { get; set; } = [];
+
+    // Base calendar
+    public ICollection<TechnicalWorkSchedule> WorkSchedules { get; set; } = [];
+
+    // Blockages/impacts
+    public ICollection<TechnicalCalendarBlock> CalendarBlocks { get; set; } = [];
+
+    // ==== Payments and Payouts === //
+
+    // Connected provider account id (e.g. Stripe account id: acct_xxx).
+    public string? ProviderAccountId { get; set; }
+
+    // Display name returned by the provider
+    public string? ProviderDisplayName { get; set; }
+
+    // Indicates whether provider payments/payouts are enabled for this technician.
+    public bool ProviderPaymentsEnabled { get; set; }
+
+    public ICollection<Payout> Payouts { get; set; } = [];
 
 }

@@ -1,8 +1,9 @@
 using AutoMapper;
 using Stripe;
-using UcarMobileApi.Application.DTOs;
+using UcarMobileApi.Application.DTOs.Payments;
 using UcarMobileApi.Core.Entities.Payments;
 using PaymentMethod = UcarMobileApi.Core.Entities.Payments.PaymentMethod;
+using Payout = UcarMobileApi.Core.Entities.Payments.Payout;
 
 
 namespace UcarMobileApi.Application.Mapping;
@@ -34,5 +35,6 @@ public class PaymentMappingProfile : Profile
 
         CreateMap<PaymentMethod, PaymentMethodListDto>();
 
+        CreateMap<Payout, PayoutDto>().ReverseMap();
     }
 }

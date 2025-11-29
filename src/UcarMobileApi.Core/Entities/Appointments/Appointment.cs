@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using UcarMobileApi.Core.Entities.Clients;
 using UcarMobileApi.Core.Entities.Payments;
+using UcarMobileApi.Core.Enums;
 
 namespace UcarMobileApi.Core.Entities.Appointments;
 
@@ -11,8 +12,6 @@ public class Appointment : EntityBase
     public Client Client { get; set; } = null!;
 
     public ICollection<AppointmentVehicle> Vehicles { get; set; } = [];
-    public ICollection<AppointmentService> Services { get; set; } = [];
-    public ICollection<AppointmentPart> Parts { get; set; } = [];
 
     // Scheduling
     public DateTime ScheduledStart { get; set; }        // Client-selected date/time
@@ -25,6 +24,8 @@ public class Appointment : EntityBase
 
     // Pricing & billing
     public decimal EstimatedTotal { get; set; }
+    // Payment Status (Separated from workflow status for better querying)
+    public PaymentStatus PaymentStatus { get; set; } = PaymentStatus.Unpaid;
 
     // Current status
     public AppointmentStatus Status { get; set; } = AppointmentStatus.Requested;

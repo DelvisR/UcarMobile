@@ -11,7 +11,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestPlatform.TestHost;
-using UcarMobileApi.Application.DTOs;
+using UcarMobileApi.Application.DTOs.Payments;
 using UcarMobileApi.Core.Entities.Clients;
 using UcarMobileApi.Core.Entities.Users;
 using UcarMobileApi.Infrastructure.Data;

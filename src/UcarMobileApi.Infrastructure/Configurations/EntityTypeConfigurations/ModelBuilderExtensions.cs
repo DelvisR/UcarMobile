@@ -23,10 +23,10 @@ public static class ModelBuilderExtensions
                 builder.HasKey("Id");
             }
 
-            builder.Property("CreatedBy").HasMaxLength(40).IsRequired();
-            builder.Property("CreatedDate").IsRequired();
-            builder.Property("LastModifiedBy").HasMaxLength(40).IsRequired();
-            builder.Property("LastModifiedDate").IsRequired();
+            builder.Property("CreatedBy").HasMaxLength(40).IsRequired().HasDefaultValue("System");
+            builder.Property("CreatedDate").IsRequired().HasDefaultValueSql("NOW() AT TIME ZONE 'UTC'");
+            builder.Property("LastModifiedBy").HasMaxLength(40).IsRequired().HasDefaultValue("System");
+            builder.Property("LastModifiedDate").IsRequired().HasDefaultValueSql("NOW() AT TIME ZONE 'UTC'");
             builder.Property("IsDeleted").IsRequired().HasDefaultValue(false);
         }
     }

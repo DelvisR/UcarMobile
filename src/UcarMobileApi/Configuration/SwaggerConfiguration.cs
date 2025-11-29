@@ -1,4 +1,3 @@
-using System.Reflection;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.SwaggerGen;
@@ -50,10 +49,13 @@ public static class SwaggerConfiguration
             // Apply OperationFilter to automatically add security only to protected endpoints
             c.OperationFilter<AuthResponsesOperationFilter>();
 
-            // Enable XML comments for documentation
-            var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
-            var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
-            c.IncludeXmlComments(xmlPath);
+            // XML Comments: register ALL projects that generate XML
+            var basePath = AppContext.BaseDirectory;
+
+            foreach (var file in Directory.GetFiles(basePath, "*.xml", SearchOption.TopDirectoryOnly))
+            {
+                c.IncludeXmlComments(file, true);
+            }
         });
 
         return services;

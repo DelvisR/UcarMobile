@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using UcarMobileApi.Core.Entities.Appointments;
 using UcarMobileApi.Core.Entities.Clients;
 
 namespace UcarMobileApi.Core.Entities.Payments;
@@ -19,6 +20,10 @@ public class Payment : EntityBase
     public string Status { get; set; } = "pending";
     public string? ClientSecret { get; init; }
     public string? ErrorCode { get; set; }
+
+    // Optional relationship with Appointment (when payment is for an appointment)
+    public int? AppointmentId { get; set; }
+    public Appointment? Appointment { get; set; }
 
     /// <summary>
     /// Collection of refunds related to this payment.

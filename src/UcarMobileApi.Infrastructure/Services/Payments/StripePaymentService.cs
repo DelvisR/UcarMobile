@@ -10,13 +10,16 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Stripe;
 using UcarMobileApi.Application.Common.Interfaces;
-using UcarMobileApi.Application.DTOs;
+using UcarMobileApi.Application.DTOs.Payments;
 using UcarMobileApi.Application.Services.Security;
-using UcarMobileApi.Application.Validators.Payment;
+using UcarMobileApi.Application.Validators;
 using UcarMobileApi.Core.Entities.Clients;
 using UcarMobileApi.Core.Entities.Payments;
+using UcarMobileApi.Core.Entities.Technicians;
+using UcarMobileApi.Core.Exceptions;
 using UcarMobileApi.Infrastructure.Data;
 using PaymentMethod = UcarMobileApi.Core.Entities.Payments.PaymentMethod;
+using Payout = UcarMobileApi.Core.Entities.Payments.Payout;
 
 namespace UcarMobileApi.Infrastructure.Services.Payments;
 
@@ -378,4 +381,173 @@ public class StripePaymentService(
             };
         }
     }
+
+    #region // ======== PAYOUTS ========== //
+
+    public async Task<OnboardResponseDto> CreateAccountAsync(string authProviderId, OnboardRequestDto dto, CancellationToken cancellationToken)
+    {
+        var technician = await context.Set<Technician>()
+                             .FirstOrDefaultAsync(c => c.AuthProviderId == authProviderId, cancellationToken)
+                         ?? throw new KeyNotFoundException($"Technician with AuthProviderId {authProviderId} not found.");
+
+        if (!string.IsNullOrEmpty(technician.ProviderAccountId))
+            throw new InvalidOperationException("Technician already has a provider account.");
+
+        var accountService = new AccountService();
+        var account = await accountService.CreateAsync(new AccountCreateOptions
+        {
+            Type = "express",
+            Email = technician.Email,
+            BusinessType = "individual"
+        }, cancellationToken: cancellationToken);
+
+        technician.ProviderAccountId = account.Id;
+        await context.SaveChangesAsync(cancellationToken);
+
+        var link = await CreateAccountLinkInternalAsync(account.Id, dto, cancellationToken);
+
+        return new OnboardResponseDto { OnboardingUrl = link };
+    }
+
+    /// <summary>
+    /// Generates a new onboarding link for an existing provider account.
+    /// </summary>
+    public async Task<OnboardResponseDto> RefreshOnboardingLinkAsync(string authProviderId, OnboardRequestDto dto, CancellationToken cancellationToken)
+    {
+        var technician = await context.Set<Technician>().AsNoTracking()
+                             .FirstOrDefaultAsync(c => c.AuthProviderId == authProviderId, cancellationToken)
+                         ?? throw new KeyNotFoundException($"Technician with AuthProviderId {authProviderId} not found.");
+
+        if (string.IsNullOrEmpty(technician.ProviderAccountId))
+            throw new InvalidOperationException("Technician has no provider account.");
+
+        var link = await CreateAccountLinkInternalAsync(technician.ProviderAccountId, dto, cancellationToken);
+
+        return new OnboardResponseDto { OnboardingUrl = link };
+    }
+
+    /// <summary>
+    /// Creates an account onboarding link using the provider API.
+    /// </summary>
+    private static async Task<string> CreateAccountLinkInternalAsync(string providerAccountId, OnboardRequestDto dto, CancellationToken cancellationToken)
+    {
+        var linkService = new AccountLinkService();
+        var link = await linkService.CreateAsync(new AccountLinkCreateOptions
+        {
+            Account = providerAccountId,
+            RefreshUrl = dto.RefreshUrl,
+            ReturnUrl = dto.ReturnUrl,
+            Type = "account_onboarding"
+        }, cancellationToken: cancellationToken);
+
+        return link.Url;
+    }
+
+    /// <summary>
+    /// Creates a payout transfer to a technician's connected account in Stripe.
+    /// Handles Stripe errors in a controlled manner and persists the payout locally.
+    /// </summary>
+    /// <param name="authProviderId">The technician provider id</param>
+    /// <param name="dto">Data needed for the payout.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>A <see cref="PayoutDto"/> with status and error information.</returns>
+    public async Task<PayoutDto> MakeTransferAsync(string authProviderId, PayoutCreateDto dto, CancellationToken cancellationToken)
+    {
+        var technician = await context.Set<Technician>().AsNoTracking()
+                             .FirstOrDefaultAsync(c => c.AuthProviderId == authProviderId, cancellationToken)
+                         ?? throw new KeyNotFoundException($"Technician with AuthProviderId {authProviderId} not found.");
+
+        if (string.IsNullOrEmpty(technician.ProviderAccountId))
+            throw new BusinessException("Technician has no provider account.");
+
+        if (!technician.ProviderPaymentsEnabled)
+            throw new BusinessException("Technician payouts are not enabled.");
+
+        // Verify local idempotence
+        var existingPayoutId = await cache.GetAsync<int?>(dto.IdempotencyKey);
+        if (existingPayoutId.HasValue)
+        {
+            var existing = await context.Set<Payout>().FindAsync([existingPayoutId], cancellationToken);
+            if (existing != null)
+                return mapper.Map<PayoutDto>(existing);
+        }
+
+        var transferService = new TransferService();
+        var requestOptions = new RequestOptions
+        {
+            IdempotencyKey = dto.IdempotencyKey
+        };
+
+        Transfer? transferResult;
+
+        try
+        {
+            transferResult = await transferService.CreateAsync(
+                new TransferCreateOptions
+                {
+                    Amount = dto.AmountCents,
+                    Currency = dto.Currency ?? "usd",
+                    Destination = technician.ProviderAccountId,
+                    TransferGroup = $"tech_payout_{technician.ProviderAccountId}_{DateTime.UtcNow:yyyyMMddHHmmss}",
+                    Metadata = new Dictionary<string, string>
+                    {
+                        { "technicianId", technician.Id.ToString() },
+                        { "source", "UcarMobile" },
+                        { "idempotencyKey", dto.IdempotencyKey }
+                    }
+                },
+                requestOptions,
+                cancellationToken
+            );
+            ;
+        }
+        catch (StripeException ex)
+        {
+            logger.LogError(ex, "Stripe error while creating transfer");
+
+            var errorCode = ex.StripeError?.Code ?? "stripe_error";
+
+            return new PayoutDto
+            {
+                Status = "error",
+                AmountCents = dto.AmountCents,
+                Currency = dto.Currency ?? "usd",
+                ErrorCode = errorCode
+            };
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Unexpected internal error while creating transfer");
+
+            return new PayoutDto
+            {
+                Status = "error",
+                AmountCents = dto.AmountCents,
+                Currency = dto.Currency ?? "usd",
+                ErrorCode = "internal_error"
+            };
+        }
+
+        // Persist the payout locally
+        var payout = new Payout
+        {
+            TechnicianId = technician.Id,
+            ProviderPayoutId = transferResult.Id,
+            AmountCents = dto.AmountCents,
+            Currency = dto.Currency ?? "usd",
+            Status = "pending"
+        };
+
+        await context.Set<Payout>().AddAsync(payout, cancellationToken);
+        await context.SaveChangesAsync(cancellationToken);
+
+        // Save to local cache
+        if (!string.IsNullOrEmpty(requestOptions.IdempotencyKey))
+            await cache.SetAsync(requestOptions.IdempotencyKey, payout.Id, ttl: IdempotencyTtl, slidingExpiration: null);
+
+        return mapper.Map<PayoutDto>(payout);
+    }
+
+    #endregion
+
 }

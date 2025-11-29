@@ -4,8 +4,8 @@ namespace UcarMobileApi.Core.Entities.Appointments;
 
 public class AppointmentService : EntityBase
 {
-    public int AppointmentId { get; set; }
-    public Appointment Appointment { get; set; } = null!;
+    public int AppointmentVehicleId { get; set; }
+    public AppointmentVehicle AppointmentVehicle { get; set; } = null!;
 
     public int ServiceId { get; set; }
     public Service Service { get; set; } = null!;

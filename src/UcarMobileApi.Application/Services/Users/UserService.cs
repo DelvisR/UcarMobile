@@ -87,4 +87,39 @@ public class UserService(IMapper mapper, IAppDbContext context, IGridifyMapper<U
             throw new KeyNotFoundException($"User with ID {id} not found.");
         }
     }
+
+    /// <summary>
+    /// Assigns or updates the roles for a specific user.
+    /// Uses AutoMapper.Collection to synchronize the UserRoles collection:
+    /// - Adds new roles
+    /// - Removes roles not included in the DTO list
+    /// - Avoids duplicate Role insertions
+    /// </summary>
+    /// <param name="userId">The ID of the user to update.</param>
+    /// <param name="roles">List of roles to assign.</param>
+    /// <param name="ct">Request cancellation token.</param>
+    /// <exception cref="KeyNotFoundException">Thrown if the user is not found.</exception>
+    public async Task AssignRolesAsync(int userId, List<RoleDto> roles, CancellationToken ct)
+    {
+        // Validate roles list before applying changes
+        var validator = new UserRoleListValidator();
+        await validator.ValidateAndThrowAsync(roles, ct);
+
+        // Load the user with UserRoles to allow AutoMapper.Collection to sync the collection
+        var user = await context.Set<User>()
+                       .Include(u => u.UserRoles)
+                       .ThenInclude(ur => ur.Role)
+                       .FirstOrDefaultAsync(u => u.Id == userId, ct)
+                   ?? throw new KeyNotFoundException($"User with ID {userId} not found.");
+
+        // Synchronize the UserRoles collection
+        // AutoMapper.Collection performs:
+        // - Add if Role not present
+        // - Remove missing entries
+        // - Match based on EqualityComparison in AutoMapper Profile
+        mapper.Map(roles, user.UserRoles);
+
+        await context.SaveChangesAsync(ct);
+    }
+
 }

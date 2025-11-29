@@ -100,4 +100,23 @@ public class UsersController(UserService userService) : ControllerBase
         await userService.ActivateUserAsync(id, active, ct);
         return NoContent();
     }
+
+    /// <summary>
+    /// Assigns or updates the roles for a specific user.
+    /// Requires 'ACTION_EDIT_USER' action.
+    /// </summary>
+    /// <param name="id">The user ID.</param>
+    /// <param name="roles">List of roles to assign.</param>
+    /// <param name="ct">Request cancellation token.</param>
+    /// <response code="204">Roles updated successfully.</response>
+    /// <response code="404">User not found.</response>
+    [HttpPut("{id:int}/roles")]
+    [RequireAction("ACTION_EDIT_USER")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> AssignRoles(int id, List<RoleDto> roles, CancellationToken ct)
+    {
+        await userService.AssignRolesAsync(id, roles, ct);
+        return NoContent();
+    }
+
 }

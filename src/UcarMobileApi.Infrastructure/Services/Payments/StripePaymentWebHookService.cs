@@ -6,7 +6,9 @@ using Microsoft.Extensions.Logging;
 using Stripe;
 using UcarMobileApi.Application.Common.Interfaces;
 using UcarMobileApi.Core.Entities.Payments;
+using UcarMobileApi.Core.Entities.Technicians;
 using UcarMobileApi.Infrastructure.Data;
+using Payout = UcarMobileApi.Core.Entities.Payments.Payout;
 
 namespace UcarMobileApi.Infrastructure.Services.Payments;
 
@@ -105,5 +107,42 @@ public class StripePaymentWebHookService(AppDbContext context, ILogger<StripePay
         }
 
         await context.SaveChangesAsync(cancellationToken);
+    }
+
+    // ===== PAYOUTS ===== //
+
+    public async Task HandleAccountUpdatedAsync(Account account)
+    {
+        var tech = await context.Set<Technician>().FirstOrDefaultAsync(t => t.ProviderAccountId == account.Id);
+
+        if (tech == null)
+            return;
+
+        tech.ProviderPaymentsEnabled = account is { ChargesEnabled: true, PayoutsEnabled: true };
+
+        tech.ProviderDisplayName = $"{account.Individual?.FirstName} {account.Individual?.LastName}".Trim();
+
+        await context.SaveChangesAsync();
+
+        logger.LogInformation("Updated technician {TechnicianId} provider flags: PaymentsEnabled={Enabled}", tech.Id, tech.ProviderPaymentsEnabled);
+    }
+
+    /// <summary>
+    /// Updates an existing payout record when the provider sends a payout webhook event.
+    /// </summary>
+    public async Task HandlePayoutWebhookAsync(Stripe.Payout payout)
+    {
+        var payoutRecord = await context.Set<Payout>().FirstOrDefaultAsync(p => p.ProviderPayoutId == payout.Id);
+
+        if (payoutRecord == null)
+            return;
+
+        payoutRecord.ProviderDestination = payout.Destination.AccountId;
+        payoutRecord.Status = payout.Status ?? "unknown";
+        payoutRecord.CreatedAt = payout.Created;
+
+        await context.SaveChangesAsync();
+
+        logger.LogInformation("Recorded provider payout {PayoutId} status {Status} amount {Amount}", payout.Id, payout.Status, payout.Amount);
     }
 }

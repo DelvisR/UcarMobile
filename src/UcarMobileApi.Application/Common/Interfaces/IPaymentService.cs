@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using UcarMobileApi.Application.DTOs;
+using UcarMobileApi.Application.DTOs.Payments;
 
 namespace UcarMobileApi.Application.Common.Interfaces;
 
@@ -38,4 +38,22 @@ public interface IPaymentService
     /// Issues a refund for an existing payment, either partial or full.
     /// </summary>
     Task<PaymentRefundResultDto> RefundPaymentAsync(PaymentRefundDto dto, CancellationToken cancellationToken = default);
+
+    // === Payouts === /
+
+    /// <summary>
+    /// Creates a provider (connect) account for a given technician and returns an onboarding URL.
+    /// This will persist the provider account id to the technician entity.
+    /// </summary>
+    Task<OnboardResponseDto> CreateAccountAsync(string authProviderId, OnboardRequestDto dto, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Creates a fresh account link for an existing provider account to allow onboarding refresh.
+    /// </summary>
+    Task<OnboardResponseDto> RefreshOnboardingLinkAsync(string authProviderId, OnboardRequestDto dto, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Transfers funds from the platform balance to the technician's connected account.
+    /// </summary>
+    Task<PayoutDto> MakeTransferAsync(string authProviderId, PayoutCreateDto createDto, CancellationToken cancellationToken);
 }

@@ -13,9 +13,9 @@ using Microsoft.EntityFrameworkCore;
 using UcarMobileApi.Application.Common.Interfaces;
 using UcarMobileApi.Application.Common.Models;
 using UcarMobileApi.Application.DTOs.Clients;
-using UcarMobileApi.Application.Services.Configurations;
 using UcarMobileApi.Application.Utilities;
 using UcarMobileApi.Application.Validators.Clients;
+using UcarMobileApi.Core.Constants;
 using UcarMobileApi.Core.Entities.Clients;
 using UcarMobileApi.Core.Entities.Users;
 
@@ -58,7 +58,7 @@ public class ClientService(IMapper mapper, IAppDbContext context, BusinessParame
 
         var client = mapper.Map<Client>(dto);
 
-        var defaultRoles = await businessParameters.GetValueAsync<string>("DefaultClientRoles", ct);
+        var defaultRoles = await businessParameters.GetValueAsync<string>(BusinessParameterKeys.DefaultClientRoles, ct);
 
         if (!string.IsNullOrWhiteSpace(defaultRoles))
         {

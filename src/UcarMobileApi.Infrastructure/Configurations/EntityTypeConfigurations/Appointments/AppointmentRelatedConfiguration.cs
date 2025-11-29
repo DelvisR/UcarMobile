@@ -25,7 +25,7 @@ public class AppointmentDocumentConfiguration : IEntityTypeConfiguration<Appoint
         builder.HasOne(ad => ad.AppointmentNote)
             .WithMany()
             .HasForeignKey(ad => ad.AppointmentNoteId)
-            .OnDelete(DeleteBehavior.SetNull);
+            .OnDelete(DeleteBehavior.Cascade);
 
         // Indexes
         builder.HasIndex(ad => ad.AppointmentId);
@@ -73,9 +73,9 @@ public class AppointmentServiceConfiguration : IEntityTypeConfiguration<Appointm
             .HasMaxLength(500);
 
         // Relationships
-        builder.HasOne(s => s.Appointment)
-            .WithMany(a => a.Services)
-            .HasForeignKey(s => s.AppointmentId)
+        builder.HasOne(s => s.AppointmentVehicle)
+            .WithMany(av => av.Services)
+            .HasForeignKey(s => s.AppointmentVehicleId)
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasOne(s => s.Service)
@@ -84,7 +84,7 @@ public class AppointmentServiceConfiguration : IEntityTypeConfiguration<Appointm
             .OnDelete(DeleteBehavior.Cascade);
 
         // Indexes
-        builder.HasIndex(s => s.AppointmentId);
+        builder.HasIndex(s => s.AppointmentVehicleId);
         builder.HasIndex(s => s.ServiceId);
     }
 }
@@ -117,13 +117,13 @@ public class AppointmentPartConfiguration : IEntityTypeConfiguration<Appointment
             .HasMaxLength(500);
 
         // Relationships
-        builder.HasOne(ap => ap.Appointment)
-            .WithMany(a => a.Parts)
-            .HasForeignKey(ap => ap.AppointmentId)
+        builder.HasOne(ap => ap.AppointmentVehicle)
+            .WithMany(av => av.Parts)
+            .HasForeignKey(ap => ap.AppointmentVehicleId)
             .OnDelete(DeleteBehavior.Cascade);
 
         // Indexes
-        builder.HasIndex(ap => ap.AppointmentId);
+        builder.HasIndex(ap => ap.AppointmentVehicleId);
         builder.HasIndex(ap => ap.PartNumber);
     }
 }
@@ -139,13 +139,23 @@ public class AppointmentVehicleConfiguration : IEntityTypeConfiguration<Appointm
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasOne(av => av.Technician)
-            .WithMany()
+            .WithMany(t => t.Appointments)
             .HasForeignKey(av => av.TechnicianId)
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasOne(av => av.Vehicle)
             .WithMany(cv => cv.Appointments)
             .HasForeignKey(av => av.VehicleId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasMany(av => av.Services)
+            .WithOne(s => s.AppointmentVehicle)
+            .HasForeignKey(s => s.AppointmentVehicleId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasMany(av => av.Parts)
+            .WithOne(p => p.AppointmentVehicle)
+            .HasForeignKey(p => p.AppointmentVehicleId)
             .OnDelete(DeleteBehavior.Cascade);
 
         // Indexes
