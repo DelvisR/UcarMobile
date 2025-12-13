@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UcarMobileApi.Core.Entities.Clients;
+using UcarMobileApi.Core.Entities.Common;
 
 namespace UcarMobileApi.Core.Entities.Payments;
 
@@ -49,5 +50,5 @@ public class PaymentMethod : EntityBase
     /// </summary>
     public Client Client { get; set; } = null!;
 
-    public IEnumerable<Payment> Payments { get; set; } = new List<Payment>();
+    public IEnumerable<Payment> Payments { get; set; } = [];
 }

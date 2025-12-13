@@ -22,11 +22,7 @@ namespace UcarMobileApi.Application.Services.Technicians;
 /// Service for managing Technician entities.
 /// Provides CRUD operations with pagination, filtering, and validation.
 /// </summary>
-public class TechnicianService(
-    IMapper mapper,
-    IAppDbContext context,
-    BusinessParameterService businessParameters,
-    IGridifyMapper<Technician> gridifyMapper)
+public class TechnicianService(IMapper mapper, IAppDbContext context, BusinessParameterService businessParameters, IGridifyMapper<Technician> gridifyMapper)
 {
     /// <summary>
     /// Retrieves a paginated list of technicians with filtering and sorting.
@@ -34,9 +30,7 @@ public class TechnicianService(
     /// <param name="query">Query filter containing pagination, filtering, and sorting parameters.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>A tuple containing pagination headers and the list of technician DTOs.</returns>
-    public async Task<(IHeaderDictionary, IEnumerable<TechnicianDto>)> GetTechniciansAsync(
-        QueryFilter query,
-        CancellationToken ct)
+    public async Task<(IHeaderDictionary, IEnumerable<TechnicianDto>)> GetTechniciansAsync(QueryFilter query, CancellationToken ct)
     {
         var technicians = context.Set<Technician>()
             .Include(t => t.ServiceZones)
@@ -209,8 +203,24 @@ public class TechnicianService(
             .ToListAsync(ct);
     }
 
-    public async Task<Dictionary<string, List<string>>> GetAvailableSlotsAsync(bool includeToday, CancellationToken ct)
+    public async Task<Dictionary<string, List<string>>> GetAvailableSlotsAsync(AvailableSlotRequestDto request, CancellationToken ct)
     {
-        return await TechnicianAvailability.GetAvailableSlotsAsync(context, ct, businessParameters, includeToday);
+        // Validate the DTO
+        var validator = new AvailableSlotRequestValidator();
+        await validator.ValidateAndThrowAsync(request, ct);
+
+        return await TechnicianAvailability.GetAvailableSlotsSqlAsync(context, businessParameters, request, ct);
+    }
+
+    public async Task<TechnicianDto?> GetNearestAvailableTechnicianAsync(NearestAvailableRequestDto request, CancellationToken ct)
+    {
+        // Validate the DTO
+        var validator = new NearestAvailableRequestValidator();
+        await validator.ValidateAndThrowAsync(request, ct);
+
+        var technician = await TechnicianAvailability.GetNearestAvailableTechnicianAsync(context, businessParameters, request.Lat, request.Lng,
+            request.ZipCode, request.Specialties, request.LocalStar, request.LocalEnd, ct);
+
+        return mapper.Map<TechnicianDto>(technician);
     }
 }

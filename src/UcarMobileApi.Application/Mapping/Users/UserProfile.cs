@@ -35,7 +35,7 @@ public class UserProfile : Profile
         CreateMap<RoleDto, UserRole>()
             .ConstructUsing(dto => new UserRole { RoleId = dto.Id })
             .ForMember(dest => dest.UserId, opt => opt.Ignore())
-            .ForMember(dest => dest.Role, opt => opt.Ignore())
+            .ForMember(dest => dest.Role, opt => opt.Ignore()) // avoid duplicate insertion
             .EqualityComparison((dto, entity) => dto.Id == entity.RoleId);
 
         CreateMap<UserRole, RoleDto>()

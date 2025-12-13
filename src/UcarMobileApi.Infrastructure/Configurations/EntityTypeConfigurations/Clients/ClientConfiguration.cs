@@ -11,5 +11,7 @@ public class ClientConfiguration : IEntityTypeConfiguration<Client>
         builder.ToTable("Client"); // TPT (Table-Per-Type)
 
         builder.Property(c => c.Address).HasMaxLength(256);
+
+        builder.Property(t => t.ProviderPaymentCustomerId).HasMaxLength(65);
     }
 }

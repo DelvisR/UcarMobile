@@ -1,3 +1,5 @@
+using UcarMobileApi.Core.Entities.Common;
+
 namespace UcarMobileApi.Core.Entities.Appointments;
 
 public class AppointmentNote : EntityBase

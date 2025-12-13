@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using UcarMobileApi.Core.Entities.Technicians;
+using UcarMobileApi.Infrastructure.Configurations.EntityTypeConfigurations.Common;
 
 namespace UcarMobileApi.Infrastructure.Configurations.EntityTypeConfigurations.Technicians;
 
@@ -20,13 +21,13 @@ public class TechnicianConfiguration : IEntityTypeConfiguration<Technician>
             .IsRequired()
             .HasDefaultValue(false);
 
-        // Relationships
+        builder.OwnsOne(t => t.BaseAddress).ConfigureAddressInfo();
 
-        // Relationship with AppointmentVehicle (configured in AppointmentVehicleConfiguration)
-        builder.HasMany(t => t.Appointments)
-            .WithOne(av => av.Technician)
-            .HasForeignKey(av => av.TechnicianId)
-            .OnDelete(DeleteBehavior.Cascade);
+        builder.Property(t => t.ProviderAccountId).HasMaxLength(65);
+        builder.Property(t => t.ProviderDisplayName).HasMaxLength(255);
+        builder.Property(t => t.ProviderPaymentsEnabled).HasDefaultValue(false);
+
+        // Relationships
 
         // Relationship with TechnicianServiceZone
         builder.HasMany(t => t.ServiceZones)

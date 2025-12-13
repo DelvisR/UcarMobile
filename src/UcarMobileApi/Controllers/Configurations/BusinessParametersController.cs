@@ -7,19 +7,10 @@ namespace UcarMobileApi.Controllers.Configurations;
 
 /// <summary>
 /// Controller for managing global business parameters.
-/// 
-/// Provides endpoints to:
-/// - Retrieve all global parameters (cached in memory for performance)
-/// - Update a parameter value by its key (automatically invalidates cache)
-/// 
-/// This controller interacts with the BusinessParameterService, which handles
-/// data retrieval from the database, mapping to DTOs, and cache management.
-/// 
-/// Typical use case: exposing global settings such as CommercialMarkup,
-/// AutoEstimateLabor, DefaultClientRoles, etc., to the API and admin clients.
 /// </summary>
 [ApiController]
 [Route("api/business-parameters")]
+[Tags("Business Parameters")]
 public class BusinessParametersController(BusinessParameterService service) : ControllerBase
 {
     /// <summary>

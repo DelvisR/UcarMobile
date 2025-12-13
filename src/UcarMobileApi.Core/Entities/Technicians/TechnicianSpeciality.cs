@@ -1,3 +1,6 @@
+using UcarMobileApi.Core.Entities.Common;
+using UcarMobileApi.Core.Entities.Services;
+
 namespace UcarMobileApi.Core.Entities.Technicians;
 
 /// <summary>
@@ -10,7 +13,7 @@ public class TechnicianSpeciality : AuditableEntity
     public Technician Technician { get; set; } = null!;
 
     public int ServiceCategoryId { get; set; }
-    public Services.ServiceCategory ServiceCategory { get; set; } = null!;
+    public ServiceCategory ServiceCategory { get; set; } = null!;
 
     public SkillLevel SkillLevel { get; set; } = SkillLevel.Junior;
     public bool IsCertified { get; set; }

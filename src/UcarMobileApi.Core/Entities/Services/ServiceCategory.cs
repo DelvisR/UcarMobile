@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using UcarMobileApi.Core.Entities.Common;
 using UcarMobileApi.Core.Entities.Technicians;
 
 namespace UcarMobileApi.Core.Entities.Services;
@@ -13,5 +14,4 @@ public class ServiceCategory : EntityBase
     public ICollection<Service> Services { get; set; } = [];
 
     public ICollection<TechnicianSpeciality> TechnicianSpecialities { get; set; } = [];
-
 }

@@ -29,5 +29,7 @@ public class TechnicianServiceZoneConfiguration : IEntityTypeConfiguration<Techn
             .WithMany(sz => sz.Technicians)
             .HasForeignKey(tsz => tsz.ServiceZoneId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasIndex(e => new { e.ServiceZoneId, e.TechnicianId });
     }
 }

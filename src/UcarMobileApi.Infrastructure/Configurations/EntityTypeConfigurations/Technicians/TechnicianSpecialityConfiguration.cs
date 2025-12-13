@@ -33,5 +33,7 @@ public class TechnicianSpecialityConfiguration : IEntityTypeConfiguration<Techni
             .WithMany(sc => sc.TechnicianSpecialities)
             .HasForeignKey(ts => ts.ServiceCategoryId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasIndex(ts => new { ts.ServiceCategoryId, ts.TechnicianId });
     }
 }

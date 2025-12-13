@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using UcarMobileApi.Core.Entities.Common;
 
 namespace UcarMobileApi.Core.Entities.Users;
 

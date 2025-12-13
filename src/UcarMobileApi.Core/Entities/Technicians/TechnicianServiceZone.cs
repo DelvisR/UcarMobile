@@ -1,3 +1,4 @@
+using UcarMobileApi.Core.Entities.Common;
 using UcarMobileApi.Core.Entities.Services;
 
 namespace UcarMobileApi.Core.Entities.Technicians;

@@ -30,7 +30,7 @@ public class TechnicalCalendarBlockDto
     /// <summary>Technician id.</summary>
     public int TechnicianId { get; set; }
     /// <summary>Optional specific date (date-only).</summary>
-    public DateTime? SpecificDate { get; set; }
+    public DateOnly? SpecificDate { get; set; }
     /// <summary>Optional weekly day (recurring weekly block).</summary>
     public DayOfWeek? WeeklyDay { get; set; }
     /// <summary>Start time for partial-day block.</summary>

@@ -23,6 +23,9 @@ public class RoleProfile : Profile
         // ActionDto -> RoleAction (join)
         CreateMap<ActionDto, RoleAction>()
             .ConstructUsing(dto => new RoleAction { ActionId = dto.Id })
+            .ForMember(dest => dest.RoleId, opt => opt.Ignore())
+            .ForMember(dest => dest.Role, opt => opt.Ignore())
+            .ForMember(dest => dest.Action, opt => opt.Ignore())
             .EqualityComparison((dto, entity) => dto.Id == entity.ActionId);
     }
 }

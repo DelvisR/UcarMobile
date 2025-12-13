@@ -12,9 +12,6 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
     {
         builder.ToTable("UserAccount"); // Rename because “User” is a reserved word in PostgreSQL
 
-        // Primary key (in User)
-        builder.HasKey(u => u.Id);
-
         builder.HasIndex(u => u.AuthProviderId).IsUnique();
         builder.HasIndex(u => u.Email).IsUnique();
 
@@ -25,6 +22,8 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(u => u.AuthProviderId).HasMaxLength(256);
         builder.Property(x => x.LangKey).HasMaxLength(6).HasDefaultValue("en");
         builder.Property(u => u.IsActive).IsRequired().HasDefaultValue(false);
+
+        builder.HasIndex(r => r.IsActive);
     }
 }
 
@@ -70,6 +69,9 @@ public class RoleActionConfiguration : IEntityTypeConfiguration<RoleAction>
 {
     public void Configure(EntityTypeBuilder<RoleAction> builder)
     {
+        // Composite PK
+        builder.HasKey(x => new { x.RoleId, x.ActionId });
+
         builder.HasOne(rp => rp.Role).WithMany(r => r.RoleActions).HasForeignKey(rp => rp.RoleId).OnDelete(DeleteBehavior.Cascade);
         builder.HasOne(rp => rp.Action).WithMany(p => p.RoleActions).HasForeignKey(rp => rp.ActionId).OnDelete(DeleteBehavior.Cascade);
     }

@@ -35,7 +35,7 @@ public class PaymentRefundConfiguration : IEntityTypeConfiguration<PaymentRefund
         builder.HasOne(x => x.Payment)
             .WithMany(p => p.Refunds) // ensure Payment has ICollection<PaymentRefund> Refunds
             .HasForeignKey(x => x.PaymentId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasIndex(r => r.ProviderRefundId).IsUnique();
     }

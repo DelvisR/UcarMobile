@@ -13,6 +13,7 @@ namespace UcarMobileApi.Controllers.Payments;
 /// </summary>
 [ApiController]
 [Route("api/payments/webhook")]
+[Tags("Stripe Webhook")]
 public class StripeWebhookController(IPaymentWebHookService paymentWebHookService, StripeClientFactory stripeClientFactory, ILogger<StripeWebhookController> logger) : ControllerBase
 {
     /// <summary>

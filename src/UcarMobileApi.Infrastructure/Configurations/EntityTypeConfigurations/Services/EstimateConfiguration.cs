@@ -8,6 +8,9 @@ public class EstimateConfiguration : IEntityTypeConfiguration<Estimate>
 {
     public void Configure(EntityTypeBuilder<Estimate> builder)
     {
+        // Composite PK
+        builder.HasKey(x => new { x.VehicleId, x.ServiceId });
+
         // Use decimal for monetary values
         builder.Property(e => e.LaborMaxCost)
             .HasColumnType("decimal(18,2)")
@@ -35,10 +38,5 @@ public class EstimateConfiguration : IEntityTypeConfiguration<Estimate>
             .WithMany(v => v.Estimates)
             .HasForeignKey(e => e.VehicleId)
             .OnDelete(DeleteBehavior.Cascade);
-
-        // Indexes
-        builder.HasIndex(e => e.ServiceId);
-        builder.HasIndex(e => e.VehicleId);
-        builder.HasIndex(e => new { e.ServiceId, e.VehicleId }).IsUnique();
     }
 }

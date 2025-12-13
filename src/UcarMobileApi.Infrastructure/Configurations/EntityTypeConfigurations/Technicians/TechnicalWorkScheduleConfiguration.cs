@@ -13,11 +13,19 @@ public class TechnicalWorkScheduleConfiguration : IEntityTypeConfiguration<Techn
         builder.Property(e => e.EndTime).IsRequired();
         builder.Property(e => e.IsActive).HasDefaultValue(true);
 
-        builder.HasIndex(e => new { e.TechnicianId, e.Day, e.StartTime, e.EndTime });
-
-        builder.HasOne(e => e.Technician)
+        builder.HasOne(t => t.Technician)
             .WithMany(t => t.WorkSchedules)
-            .HasForeignKey(e => e.TechnicianId)
+            .HasForeignKey(t => t.TechnicianId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasIndex(ws => new { ws.TechnicianId, ws.Day }).HasFilter("\"IsActive\" = TRUE");
+
+        builder.HasIndex(ws => new { ws.TechnicianId, ws.Day, ws.StartTime, ws.EndTime });
+        builder.HasIndex(ws => ws.IsActive);
+
+
+
+
+
     }
 }

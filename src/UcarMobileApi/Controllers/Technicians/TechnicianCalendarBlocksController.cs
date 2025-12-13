@@ -11,6 +11,7 @@ namespace UcarMobileApi.Controllers.Technicians;
 /// </summary>
 [ApiController]
 [Route("api/technicians/{technicianId}/blocks")]
+[Tags("Technician Calendar Blocks")]
 public class TechnicianCalendarBlocksController(TechnicianCalendarService service) : ControllerBase
 {
     /// <summary>

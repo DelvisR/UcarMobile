@@ -21,10 +21,12 @@ public class TechnicianProfile : Profile
     {
         // Map Technician entity to TechnicianDto and vice versa
         CreateMap<Technician, TechnicianDto>()
-            .IncludeBase<User, UserAccountDto>() // Inherit mapping from base User entity
-            .ForMember(dest => dest.AuthProviderId, opt => opt.Ignore())
-            .ReverseMap()
-            .EqualityComparison((dto, entity) => dto.Id == entity.Id); // smart update
+                .IncludeBase<User, UserAccountDto>() // Inherit mapping from base User entity
+                .ForMember(dest => dest.AuthProviderId, opt => opt.Ignore())
+                .ReverseMap()
+                .ForMember(dest => dest.ProviderDisplayName, opt => opt.Ignore())
+                .ForMember(dest => dest.ProviderPaymentsEnabled, opt => opt.Ignore())
+                .EqualityComparison((dto, entity) => dto.Id == entity.Id); // smart update
 
         // Map TechnicianServiceZone entity to TechnicianServiceZoneDto
         CreateMap<TechnicianSpecialityDto, TechnicianSpeciality>()

@@ -11,6 +11,9 @@ public class AppointmentDocumentConfiguration : IEntityTypeConfiguration<Appoint
 {
     public void Configure(EntityTypeBuilder<AppointmentDocument> builder)
     {
+        // Composite PK
+        builder.HasKey(x => new { x.AppointmentId, x.StoredFileId });
+
         // Relationships
         builder.HasOne(ad => ad.Appointment)
             .WithMany(a => a.Documents)
@@ -28,8 +31,8 @@ public class AppointmentDocumentConfiguration : IEntityTypeConfiguration<Appoint
             .OnDelete(DeleteBehavior.Cascade);
 
         // Indexes
-        builder.HasIndex(ad => ad.AppointmentId);
-        builder.HasIndex(ad => ad.StoredFileId);
+        //builder.HasIndex(ad => ad.AppointmentId);
+        //builder.HasIndex(ad => ad.StoredFileId);
         builder.HasIndex(ad => ad.AppointmentNoteId);
     }
 }
@@ -64,6 +67,9 @@ public class AppointmentServiceConfiguration : IEntityTypeConfiguration<Appointm
 {
     public void Configure(EntityTypeBuilder<AppointmentService> builder)
     {
+        // Composite PK
+        builder.HasKey(x => new { x.AppointmentVehicleId, x.ServiceId });
+
         // Properties
         builder.Property(s => s.Price)
             .HasColumnType("decimal(18,2)")
@@ -79,13 +85,9 @@ public class AppointmentServiceConfiguration : IEntityTypeConfiguration<Appointm
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasOne(s => s.Service)
-            .WithMany()
+            .WithMany(av => av.Appointments)
             .HasForeignKey(s => s.ServiceId)
-            .OnDelete(DeleteBehavior.Cascade);
-
-        // Indexes
-        builder.HasIndex(s => s.AppointmentVehicleId);
-        builder.HasIndex(s => s.ServiceId);
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }
 
@@ -106,10 +108,6 @@ public class AppointmentPartConfiguration : IEntityTypeConfiguration<Appointment
             .HasDefaultValue(1);
 
         builder.Property(ap => ap.UnitPrice)
-            .HasColumnType("decimal(18,2)")
-            .IsRequired();
-
-        builder.Property(ap => ap.TotalPrice)
             .HasColumnType("decimal(18,2)")
             .IsRequired();
 
@@ -141,22 +139,12 @@ public class AppointmentVehicleConfiguration : IEntityTypeConfiguration<Appointm
         builder.HasOne(av => av.Technician)
             .WithMany(t => t.Appointments)
             .HasForeignKey(av => av.TechnicianId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasOne(av => av.Vehicle)
             .WithMany(cv => cv.Appointments)
             .HasForeignKey(av => av.VehicleId)
-            .OnDelete(DeleteBehavior.Cascade);
-
-        builder.HasMany(av => av.Services)
-            .WithOne(s => s.AppointmentVehicle)
-            .HasForeignKey(s => s.AppointmentVehicleId)
-            .OnDelete(DeleteBehavior.Cascade);
-
-        builder.HasMany(av => av.Parts)
-            .WithOne(p => p.AppointmentVehicle)
-            .HasForeignKey(p => p.AppointmentVehicleId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .OnDelete(DeleteBehavior.Restrict);
 
         // Indexes
         builder.HasIndex(av => av.AppointmentId);

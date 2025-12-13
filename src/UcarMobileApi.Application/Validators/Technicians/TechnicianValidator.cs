@@ -16,6 +16,9 @@ public class TechnicianValidator : UserAccountValidator<TechnicianDto>
 {
     public TechnicianValidator(IAppDbContext dbContext) : base(dbContext)
     {
+        RuleFor(a => a.BaseAddress)
+            .SetValidator(new AddressInfoValidator());
+
         // --- SERVICE ZONES ---------------------------------------------------
 
         RuleFor(t => t.ServiceZones)

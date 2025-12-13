@@ -72,7 +72,16 @@ public static class SwaggerConfiguration
     public static IApplicationBuilder UseSwaggerDocumentation(this IApplicationBuilder app)
     {
         app.UseSwagger();
-        app.UseSwaggerUI();
+
+        app.UseSwaggerUI(c =>
+        {
+            // Sort endpoint
+            c.ConfigObject.AdditionalItems["tagsSorter"] = "alpha";
+
+            // Sort HTTP methods
+            c.ConfigObject.AdditionalItems["operationsSorter"] = "method";
+        });
+
         return app;
     }
 }

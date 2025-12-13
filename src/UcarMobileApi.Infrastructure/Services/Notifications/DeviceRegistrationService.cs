@@ -19,7 +19,7 @@ namespace UcarMobileApi.Infrastructure.Services.Notifications;
 /// Service responsible for registering devices with AWS SNS for push notifications.
 /// </summary>
 /// <param name="sns">Injected AWS SNS client.</param>
-/// <param name="db">Injected database context.</param>
+/// <param name="scopeFactory">Database scope factory.</param>
 /// <param name="settings">Injected AWS configuration settings.</param>
 public class DeviceRegistrationService(IAmazonSimpleNotificationService sns, IServiceScopeFactory scopeFactory, IOptions<AwsSettings> settings)
 {

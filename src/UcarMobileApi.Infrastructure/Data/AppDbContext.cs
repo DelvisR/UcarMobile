@@ -20,7 +20,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, IHttpContextAc
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
 
         // Apply the base configuration to all entities that inherit from EntityBase
-        modelBuilder.ApplyEntityBaseConfiguration();
+        modelBuilder.ApplyAuditableConfiguration();
 
         base.OnModelCreating(modelBuilder);
     }

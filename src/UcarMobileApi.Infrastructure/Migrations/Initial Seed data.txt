@@ -1,5 +1,4 @@
-
-            AddSeedData(migrationBuilder);
+AddSeedData(migrationBuilder);
         }
 
         private static void AddSeedData(MigrationBuilder migrationBuilder)
@@ -9,51 +8,40 @@
             migrationBuilder.InsertData(
                 table: "Role",
                 columns:
-                [
-                    "Id", "Name", "Description", "CreatedBy", "CreatedDate", "LastModifiedBy", "LastModifiedDate",
-                    "IsDeleted"
-                ],
+                ["Id", "Name", "Description"],
                 values: new object[,]
                 {
                     {
                         1, "SuperAdmin",
-                        "Has full control over the platform. Can manage all users (add, modify, delete, deactivate, assign roles), supervise analytics, reports, audit logs, system configurations, and can add other admins.",
-                        "system", DateTime.UtcNow, "system", DateTime.UtcNow, false
+                        "Has full control over the platform. Can manage all users (add, modify, delete, deactivate, assign roles), supervise analytics, reports, audit logs, system configurations, and can add other admins."
                     },
                     {
                         2, "Admin",
-                        "Almost all capabilities of SuperAdmin except adding new admins. Manages users, schedules, jobs, service zones, payments, etc.",
-                        "system", DateTime.UtcNow, "system", DateTime.UtcNow, false
+                        "Almost all capabilities of SuperAdmin except adding new admins. Manages users, schedules, jobs, service zones, payments, etc."
                     },
                     {
                         3, "Technician",
-                        "Base role for all technicians. Common actions: view appointments, parts, notes, notifications, use mobile app.",
-                        "system", DateTime.UtcNow, "system", DateTime.UtcNow, false
+                        "Base role for all technicians. Common actions: view appointments, parts, notes, notifications, use mobile app."
                     },
                     {
                         4, "TechnicianInHouse",
-                        "Fixed-schedule contractors assigned jobs by administration. Can request days off. Full mobile app access to manage appointments, parts, notes, etc. Paid weekly/monthly.",
-                        "system", DateTime.UtcNow, "system", DateTime.UtcNow, false
+                        "Fixed-schedule contractors assigned jobs by administration. Can request days off. Full mobile app access to manage appointments, parts, notes, etc. Paid weekly/monthly."
                     },
                     {
                         5, "TechnicianFreelancer",
-                        "Contractors with flexible availability, accept/reject jobs. Manage workflow in mobile app. Paid based on commissions.",
-                        "system", DateTime.UtcNow, "system", DateTime.UtcNow, false
+                        "Contractors with flexible availability, accept/reject jobs. Manage workflow in mobile app. Paid based on commissions."
                     },
                     {
                         6, "Client",
-                        "Schedules, cancels or reschedules appointments, receives updates, notifications, invoices, can view service history, rate technicians, communicate with them or the call center, manage profile and registered vehicles.",
-                        "system", DateTime.UtcNow, "system", DateTime.UtcNow, false
+                        "Schedules, cancels or reschedules appointments, receives updates, notifications, invoices, can view service history, rate technicians, communicate with them or the call center, manage profile and registered vehicles."
                     },
                     {
                         7, "FleetOwner",
-                        "Specialized client managing multiple vehicles. Can schedule appointments for several vehicles, add/manage users/managers in the account, receives centralized billing.",
-                        "system", DateTime.UtcNow, "system", DateTime.UtcNow, false
+                        "Specialized client managing multiple vehicles. Can schedule appointments for several vehicles, add/manage users/managers in the account, receives centralized billing."
                     },
                     {
                         8, "FleetManager",
-                        "Delegated by Fleet Owner. Can schedule, reschedule, cancel appointments, add notes or updates to appointments on behalf of Fleet Owner.",
-                        "system", DateTime.UtcNow, "system", DateTime.UtcNow, false
+                        "Delegated by Fleet Owner. Can schedule, reschedule, cancel appointments, add notes or updates to appointments on behalf of Fleet Owner."
                     }
                 });
 
@@ -61,225 +49,107 @@
             migrationBuilder.InsertData(
                 table: "Action",
                 columns:
-                [
-                    "Name", "Description", "Resource", "CreatedBy", "CreatedDate", "LastModifiedBy", "LastModifiedDate",
-                    "IsDeleted"
-                ],
+                ["Name", "Description", "Resource"],
                 values: new object[,]
                 {
-                    {
-                        "ACTION_CREATE_USER", "Allows creating new users", "RESOURCE_DEFAULT", "System",
-                        DateTime.UtcNow,
-                        "System", DateTime.UtcNow, false
-                    },
-                    {
-                        "ACTION_EDIT_USER", "Allows editing existing users", "RESOURCE_DEFAULT", "System",
-                        DateTime.UtcNow,
-                        "System", DateTime.UtcNow, false
-                    },
-                    {
-                        "ACTION_CREATE_CLIENT", "Allows creating new clients", "RESOURCE_DEFAULT", "System",
-                        DateTime.UtcNow,
-                        "System", DateTime.UtcNow, false
-                    },
-                    {
-                        "ACTION_EDIT_CLIENT", "Allows editing existing clients", "RESOURCE_DEFAULT", "System",
-                        DateTime.UtcNow,
-                        "System", DateTime.UtcNow, false
-                    },
-                    {
-                        "ACTION_CREATE_ROLE", "Allows creating new roles", "RESOURCE_DEFAULT", "System",
-                        DateTime.UtcNow,
-                        "System", DateTime.UtcNow, false
-                    },
-                    {
-                        "ACTION_EDIT_ROLE", "Allows editing existing roles", "RESOURCE_DEFAULT", "System",
-                        DateTime.UtcNow,
-                        "System", DateTime.UtcNow, false
-                    },
-                    {
-                        "ACTION_DELETE_ROLE", "Allows deleting roles", "RESOURCE_DEFAULT", "System", DateTime.UtcNow,
-                        "System",
-                        DateTime.UtcNow, false
-                    },
-                    {
-                        "ACTION_EDIT_BUSINESS_PARAMETER", "Allows edit existing business parameter", "RESOURCE_DEFAULT",
-                        "System", DateTime.UtcNow, "System", DateTime.UtcNow, false
-                    },
-                    {
-                        "ACTION_EDIT_LEAD", "Allows editing existing leads", "RESOURCE_DEFAULT", "System",
-                        DateTime.UtcNow,
-                        "System", DateTime.UtcNow, false
-                    },
-                    {
-                        "ACTION_DELETE_LEAD", "Allows deleting leads", "RESOURCE_DEFAULT", "System", DateTime.UtcNow,
-                        "System",
-                        DateTime.UtcNow, false
-                    },
-                    {
-                        "ACTION_UPLOAD_FILE", "Allows uploads file to AWS S3", "RESOURCE_DEFAULT", "System",
-                        DateTime.UtcNow, "System", DateTime.UtcNow, false
-                    },
-                    {
-                        "ACTION_VIEW_FILE", "Allows view file from AWS S3", "RESOURCE_DEFAULT", "System",
-                        DateTime.UtcNow, "System", DateTime.UtcNow, false
-                    },
-                    {
-                        "ACTION_DELETE_FILE", "Allows delete file from AWS S3", "RESOURCE_DEFAULT", "System",
-                        DateTime.UtcNow, "System", DateTime.UtcNow, false
-                    },
-                    {
-                        "ACTION_REGISTER_DEVICE", "Allows register devices for push notifications", "RESOURCE_DEFAULT",
-                        "System",
-                        DateTime.UtcNow, "System", DateTime.UtcNow, false
-                    },
-                    {
-                        "ACTION_SEND_NOTIFICATION", "Allows send notifications", "RESOURCE_DEFAULT", "System",
-                        DateTime.UtcNow, "System", DateTime.UtcNow, false
-                    },
-                    {
-                        "ACTION_VIEW_PAYMENT_METHODS", "Allows view payments methods", "RESOURCE_DEFAULT", "System",
-                        DateTime.UtcNow, "System", DateTime.UtcNow, false
-                    },
-                    {
-                        "ACTION_MANAGE_PAYMENTS", "Allows manage payments", "RESOURCE_DEFAULT", "System",
-                        DateTime.UtcNow, "System", DateTime.UtcNow, false
-                    },
-                    {
-                        "ACTION_CREATE_PAYMENT", "Allows create payments", "RESOURCE_DEFAULT", "System",
-                        DateTime.UtcNow, "System", DateTime.UtcNow, false
-                    },
-                    {
-                        "ACTION_REFUND_PAYMENT", "Allows refund payments", "RESOURCE_DEFAULT", "System",
-                        DateTime.UtcNow, "System", DateTime.UtcNow, false
-                    },
-                    {
-                        "ACTION_CREATE_TECHNICIAN", "Allows creating new technician", "RESOURCE_DEFAULT", "System",
-                        DateTime.UtcNow, "System", DateTime.UtcNow, false
-                    },
-                    {
-                        "ACTION_EDIT_TECHNICIAN", "Allows editing existing technician", "RESOURCE_DEFAULT", "System",
-                        DateTime.UtcNow, "System", DateTime.UtcNow, false
-                    },
-                    {
-                        "ACTION_VIEW_SERVICE_ZONES", "Allows view service zones", "RESOURCE_DEFAULT", "System",
-                        DateTime.UtcNow, "System", DateTime.UtcNow, false
-                    },
-                    {
-                        "ACTION_CREATE_SERVICE_ZONE", "Allows creating service zones", "RESOURCE_DEFAULT", "System",
-                        DateTime.UtcNow, "System", DateTime.UtcNow, false
-                    },
-                    {
-                        "ACTION_EDIT_SERVICE_ZONE", "Allows editing service zones", "RESOURCE_DEFAULT", "System",
-                        DateTime.UtcNow, "System", DateTime.UtcNow, false
-                    }
+                    { "ACTION_CREATE_USER", "Allows creating new users", "RESOURCE_DEFAULT" },
+                    { "ACTION_EDIT_USER", "Allows editing existing users", "RESOURCE_DEFAULT" },
+                    { "ACTION_CREATE_CLIENT", "Allows creating new clients", "RESOURCE_DEFAULT" },
+                    { "ACTION_EDIT_CLIENT", "Allows editing existing clients", "RESOURCE_DEFAULT" },
+                    { "ACTION_CREATE_ROLE", "Allows creating new roles", "RESOURCE_DEFAULT" },
+                    { "ACTION_EDIT_ROLE", "Allows editing existing roles", "RESOURCE_DEFAULT" },
+                    { "ACTION_DELETE_ROLE", "Allows deleting roles", "RESOURCE_DEFAULT" },
+                    { "ACTION_EDIT_BUSINESS_PARAMETER", "Allows edit existing business parameter", "RESOURCE_DEFAULT" },
+                    { "ACTION_EDIT_LEAD", "Allows editing existing leads", "RESOURCE_DEFAULT" },
+                    { "ACTION_DELETE_LEAD", "Allows deleting leads", "RESOURCE_DEFAULT" },
+                    { "ACTION_UPLOAD_FILE", "Allows uploads file to AWS S3", "RESOURCE_DEFAULT" },
+                    { "ACTION_VIEW_FILE", "Allows view file from AWS S3", "RESOURCE_DEFAULT" },
+                    { "ACTION_DELETE_FILE", "Allows delete file from AWS S3", "RESOURCE_DEFAULT" },
+                    { "ACTION_REGISTER_DEVICE", "Allows register devices for push notifications", "RESOURCE_DEFAULT" },
+                    { "ACTION_SEND_NOTIFICATION", "Allows send notifications", "RESOURCE_DEFAULT" },
+                    { "ACTION_VIEW_PAYMENT_METHODS", "Allows view payments methods", "RESOURCE_DEFAULT" },
+                    { "ACTION_MANAGE_PAYMENTS", "Allows manage payments", "RESOURCE_DEFAULT" },
+                    { "ACTION_CREATE_PAYMENT", "Allows create payments", "RESOURCE_DEFAULT" },
+                    { "ACTION_REFUND_PAYMENT", "Allows refund payments", "RESOURCE_DEFAULT" },
+                    { "ACTION_MANAGE_PAYOUTS", "Allows manage payouts", "RESOURCE_DEFAULT" },
+                    { "ACTION_CREATE_PAYOUTS", "Allows create payouts", "RESOURCE_DEFAULT" },
+                    { "ACTION_CREATE_TECHNICIAN", "Allows creating new technician", "RESOURCE_DEFAULT" },
+                    { "ACTION_EDIT_TECHNICIAN", "Allows editing existing technician", "RESOURCE_DEFAULT" },
+                    { "ACTION_VIEW_SERVICE_ZONES", "Allows view service zones", "RESOURCE_DEFAULT" },
+                    { "ACTION_CREATE_SERVICE_ZONE", "Allows creating service zones", "RESOURCE_DEFAULT" },
+                    { "ACTION_EDIT_SERVICE_ZONE", "Allows editing service zones", "RESOURCE_DEFAULT" }
                 });
 
             // Insert new actions with category "RESOURCE_MAIN_MENU"
             migrationBuilder.InsertData(
                 table: "Action",
                 columns:
-                [
-                    "Name", "Description", "Resource", "CreatedBy", "CreatedDate", "LastModifiedBy", "LastModifiedDate",
-                    "IsDeleted"
-                ],
+                ["Name", "Description", "Resource"],
                 values: new object[,]
                 {
-                    {
-                        "ACTION_MANAGE_ROLE_RESOURCE_AND_ACTIONS", "Admin menu action", "RESOURCE_MAIN_MENU", "System",
-                        DateTime.UtcNow, "System", DateTime.UtcNow, false
-                    },
-                    {
-                        "ACTION_VIEW_MAIN_MENU_DASHBOARD", "Dashboard menu action", "RESOURCE_MAIN_MENU", "System",
-                        DateTime.UtcNow, "System", DateTime.UtcNow, false
-                    },
-                    {
-                        "ACTION_VIEW_MAIN_MENU_ESTIMATE", "Estimate menu action", "RESOURCE_MAIN_MENU", "System",
-                        DateTime.UtcNow, "System", DateTime.UtcNow, false
-                    },
-                    {
-                        "ACTION_VIEW_MAIN_MENU_USERS", "Users menu action", "RESOURCE_MAIN_MENU", "System",
-                        DateTime.UtcNow, "System", DateTime.UtcNow, false
-                    },
-                    {
-                        "ACTION_VIEW_MAIN_MENU_CLIENTS", "Clients menu action", "RESOURCE_MAIN_MENU", "System",
-                        DateTime.UtcNow, "System", DateTime.UtcNow, false
-                    },
-                    {
-                        "ACTION_VIEW_MAIN_MENU_ROLES", "Roles menu action", "RESOURCE_MAIN_MENU", "System",
-                        DateTime.UtcNow, "System", DateTime.UtcNow, false
-                    },
-                    {
-                        "ACTION_VIEW_MAIN_MENU_BUSINESS_PARAMETER", "Bussiness parameters menu action",
-                        "RESOURCE_MAIN_MENU", "System",
-                        DateTime.UtcNow, "System", DateTime.UtcNow, false
-                    },
-                    {
-                        "ACTION_VIEW_MAIN_MENU_LEADS", "Leads menu action", "RESOURCE_MAIN_MENU", "System",
-                        DateTime.UtcNow, "System", DateTime.UtcNow, false
-                    },
-                    {
-                        "ACTION_VIEW_MAIN_MENU_TECHNICIANS", "Technician menu action", "RESOURCE_MAIN_MENU", "System",
-                        DateTime.UtcNow, "System", DateTime.UtcNow, false
-                    },
-                    {
-                        "ACTION_VIEW_MAIN_MENU_SERVICE_ZONES", "Service Zones menu action", "RESOURCE_MAIN_MENU",
-                        "System",
-                        DateTime.UtcNow, "System", DateTime.UtcNow, false
-                    }
+                    { "ACTION_MANAGE_ROLE_RESOURCE_AND_ACTIONS", "Admin menu action", "RESOURCE_MAIN_MENU" },
+                    { "ACTION_VIEW_MAIN_MENU_DASHBOARD", "Dashboard menu action", "RESOURCE_MAIN_MENU" },
+                    { "ACTION_VIEW_MAIN_MENU_ESTIMATE", "Estimate menu action", "RESOURCE_MAIN_MENU" },
+                    { "ACTION_VIEW_MAIN_MENU_USERS", "Users menu action", "RESOURCE_MAIN_MENU" },
+                    { "ACTION_VIEW_MAIN_MENU_CLIENTS", "Clients menu action", "RESOURCE_MAIN_MENU" },
+                    { "ACTION_VIEW_MAIN_MENU_ROLES", "Roles menu action", "RESOURCE_MAIN_MENU" },
+                    { "ACTION_VIEW_MAIN_MENU_BUSINESS_PARAMETER", "Bussiness parameters menu action", "RESOURCE_MAIN_MENU" },
+                    { "ACTION_VIEW_MAIN_MENU_LEADS", "Leads menu action", "RESOURCE_MAIN_MENU" },
+                    { "ACTION_VIEW_MAIN_MENU_TECHNICIANS", "Technician menu action", "RESOURCE_MAIN_MENU" },
+                    { "ACTION_VIEW_MAIN_MENU_SERVICE_ZONES", "Service Zones menu action", "RESOURCE_MAIN_MENU" }
                 });
 
             // Insert default values
             migrationBuilder.InsertData(
                 table: "BusinessParameter",
-                columns:
-                [
-                    "Key", "Value", "ValueType", "Description", "CreatedBy", "CreatedDate", "LastModifiedBy",
-                    "LastModifiedDate", "IsDeleted"
-                ],
+                columns: ["Key", "Value", "ValueType", "Description"],
                 values: new object[,]
                 {
                     {
-                        "DefaultClientRoles", "6", "string", "Default Role for new Client", "system", DateTime.UtcNow,
-                        "system", DateTime.UtcNow, false
+                        "DEFAULT_CLIENT_ROLES", "6", "string", "Default roles for new clients"
+                    },
+                    {
+                        "DIAGNOSTIC_WINDOW_MINUTES", "60", "int",
+                        "Default diagnostic window duration in hours when only one technician is available"
+                    },
+                    {
+                        "REPAIR_BUFFER_HOURS", "4", "decimal",
+                        "Automatic buffer time in hours allocated for potential repairs after diagnosis"
+                    },
+                    {
+                        "BOOKING_CALENDAR_DAYS_AHEAD", "30", "int",
+                        "Number of days ahead to display in the booking calendar for clients"
+                    },
+                    {
+                        "LABOR_DISCOUNT_FACTOR", "0", "decimal",
+                        "Percentage reduction applied to the consumer’s repair labor charges"
+                    },
+                    {
+                        "PART_DISCOUNT_FACTOR", "50", "decimal",
+                        "Percentage reduction applied to the consumer’s replacement parts charges"
                     }
                 });
 
             migrationBuilder.InsertData(
                 table: "UserAccount",
                 columns:
-                [
-                    "Id", "Email", "Phone", "FirstName", "LastName", "LangKey", "IsActive", "AuthProviderId",
-                    "CreatedBy", "CreatedDate", "LastModifiedBy", "LastModifiedDate", "IsDeleted"
-                ],
+                ["Id", "Email", "Phone", "FirstName", "LastName", "LangKey", "IsActive", "AuthProviderId"],
                 values: new object[,]
                 {
-                    {
-                        1, "system@ucarmobile.com", "0000000000", "System", "Root", "en", true,
-                        Guid.NewGuid().ToString(),
-                        "system", DateTime.UtcNow, "system", DateTime.UtcNow, false
-                    },
-                    {
-                        2, "admin@ucarmobile.com", "1111111111", "Super", "Admin", "en", true,
-                        "143884b8-b0a1-702e-1a8f-547574f2ed9c",
-                        "system", DateTime.UtcNow, "system", DateTime.UtcNow, false
-                    }
+                    { 1, "system@ucarmobile.com", "0000000000", "System", "Root", "en", true, Guid.NewGuid().ToString() },
+                    { 2, "admin@ucarmobile.com", "1111111111", "Super", "Admin", "en", true, "0468c438-4041-70cf-203c-a8f72965b792" }
                 });
 
             migrationBuilder.InsertData(
                 table: "UserRole",
-                columns:
-                [
-                    "UserId", "RoleId", "CreatedBy", "CreatedDate", "LastModifiedBy", "LastModifiedDate"
-                ],
-                values: [2, 1, "system", DateTime.UtcNow, "system", DateTime.UtcNow]
+                columns: ["UserId", "RoleId"],
+                values: [2, 1]
             );
 
             // assign all acction to SuperAdmin rol
             migrationBuilder.Sql(@"
-                INSERT INTO ""RoleAction"" (""RoleId"", ""ActionId"", ""CreatedBy"", ""CreatedDate"", ""LastModifiedBy"", ""LastModifiedDate"", ""IsDeleted"")
-                SELECT 1, a.""Id"", 'system', NOW(), 'system', NOW(), false
-                FROM ""Action"" a
+                INSERT INTO ""RoleAction"" (""RoleId"", ""ActionId"")
+                SELECT 1, a.""Id"" FROM ""Action"" a
                 WHERE NOT EXISTS (
                     SELECT 1 FROM ""RoleAction"" ra 
                     WHERE ra.""RoleId"" = 1 AND ra.""ActionId"" = a.""Id""
@@ -288,10 +158,9 @@
 
             // assign some actions to Client rol
             migrationBuilder.Sql(@"
-                INSERT INTO ""RoleAction"" (""RoleId"", ""ActionId"", ""CreatedBy"", ""CreatedDate"", ""LastModifiedBy"", ""LastModifiedDate"", ""IsDeleted"")
-                SELECT 6, a.""Id"", 'system', NOW(), 'system', NOW(), false
-                FROM ""Action"" a
-                WHERE a.""Id"" IN (10, 11)
+                INSERT INTO ""RoleAction"" (""RoleId"", ""ActionId"")
+                SELECT 6, a.""Id"" FROM ""Action"" a
+                WHERE a.""Id"" IN (10, 11, 16, 17)
                   AND NOT EXISTS (
                       SELECT 1 FROM ""RoleAction"" ra
                       WHERE ra.""RoleId"" = 6 AND ra.""ActionId"" = a.""Id""
@@ -303,44 +172,104 @@
                 table: "ServiceZone",
                 columns:
                 [
-                    "Id", "Name", "BaseAddress", "RadiusMiles", "Lat", "Lng", "ZipCodes", "IsActive", "CreatedBy",
-                    "CreatedDate", "LastModifiedBy", "LastModifiedDate", "IsDeleted"
+                    "Id", "Name", "BaseAddress", "RadiusMiles", "Lat", "Lng", "ZipCodes", "IsActive"
                 ],
                 values: new object[]
                 {
-                    1,
-                    "UcarMobile",
-                    "3400 14th Street Plano, TX",
-                    25.0,
-                    33.0146527,
-                    -96.6702438,
-                    "[\"75074\"]", // JSON string for jsonb field
-                    true,
-                    "system",
-                    DateTime.UtcNow,
-                    "system",
-                    DateTime.UtcNow,
-                    false
+                    1, "UcarMobile", "3400 14th Street Plano, TX", 25.0, 33.0146527, -96.6702438, new[] { "75074" }, true
                 });
 
-            // Initial Data for Service Types
+            // Add Service Type, Service Categories, Services, Vehicles, SubModel, Engine and Estimates from Script Embedded resource
+
+            // ======================================================================================================================
+
+            var assembly = typeof(InitialMigration).Assembly;
+
+            using var stream = assembly.GetManifestResourceStream("UcarMobileApi.Infrastructure.Migrations.Scripts.vehicles_and_estimates.zip");
+            using var archive = new ZipArchive(stream);
+            var entry = archive.GetEntry("vehicles_and_estimates.sql"); // script file name
+            using var entryStream = entry.Open();
+            using var reader = new StreamReader(entryStream);
+
+            var sql = reader.ReadToEnd();
+
+            migrationBuilder.Sql(sql);
+
+            // ======================================================================================================================
+
             migrationBuilder.InsertData(
-                table: "ServiceType",
-                columns: ["Id", "Title"],
+                table: "ServicePopularity",
+                columns: new[] { "ServiceId", "VehicleId", "Count" },
                 values: new object[,]
                 {
-                    { 1, "Mechanical Repair Estimate" },
+                    { 74, 0, 1 },
+                    { 57, 0, 1 },
+                    { 267, 0, 1 },
+                    { 5, 0, 1 },
+                    { 39, 0, 1 },
+                    { 254, 0, 1 },
+                    { 145, 0, 1 }
+                }
+            );
 
-                });
+            // *** Technician  *** //
 
-            // Adding some initial categories
+            // add one technician
             migrationBuilder.InsertData(
-                table: "ServiceCategory",
-                columns: ["Name", "ServiceTypeId"],
+                table: "UserAccount",
+                columns: ["Id", "Email", "Phone", "FirstName", "LastName", "IsActive"],
+                values: new object[]
+                {
+                    3, "technician@ucarmobile.com", "0000000000", "Inhouse", "Technician", true
+                }
+            );
+
+            migrationBuilder.InsertData(
+                table: "Technician",
+                columns: ["Id"],
+                values: new object[] { 3 }
+            );
+
+            // Technician roles
+            migrationBuilder.InsertData(
+                table: "UserRole",
+                columns: ["UserId", "RoleId"],
+                values: new object[,] { { 3, 3 }, { 3, 4 } }
+            );
+
+            migrationBuilder.InsertData(
+                table: "TechnicianServiceZone",
+                columns: ["TechnicianId", "ServiceZoneId", "IsPrimaryZone"],
+                values: new object[,] { { 3, 1, true } }
+            );
+
+            migrationBuilder.InsertData(
+                table: "TechnicianSpeciality",
+                columns: ["TechnicianId", "ServiceCategoryId", "SkillLevel", "IsCertified"],
                 values: new object[,]
                 {
-                    { "Body, Glass & Interior", 1 },
-                    { "Brakes", 1 },
-                    { "Diagnosis & Testing", 1 }
-                });
+                    { 3, 1, 4, true },
+                    { 3, 2, 4, true },
+                    { 3, 3, 4, true },
+                    { 3, 6, 4, true },
+                    { 3, 7, 4, true },
+                    { 3, 12, 4, true },
+                    { 3, 15, 4, true }
+                }
+            );
+
+            // add technician Calendar
+            migrationBuilder.InsertData(
+                table: "TechnicalWorkSchedule",
+                columns: ["TechnicianId", "Day", "StartTime", "EndTime"],
+                values: new object[,]
+                {
+                    { 3, 1, TimeSpan.Parse("06:00:00"), TimeSpan.Parse("18:00:00") },
+                    { 3, 2, TimeSpan.Parse("06:00:00"), TimeSpan.Parse("18:00:00") },
+                    { 3, 3, TimeSpan.Parse("06:00:00"), TimeSpan.Parse("18:00:00") },
+                    { 3, 4, TimeSpan.Parse("06:00:00"), TimeSpan.Parse("18:00:00") },
+                    { 3, 5, TimeSpan.Parse("06:00:00"), TimeSpan.Parse("18:00:00") },
+                    { 3, 6, TimeSpan.Parse("06:00:00"), TimeSpan.Parse("18:00:00") },
+                }
+            );
         }

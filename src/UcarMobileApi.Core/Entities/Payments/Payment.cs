@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UcarMobileApi.Core.Entities.Appointments;
 using UcarMobileApi.Core.Entities.Clients;
+using UcarMobileApi.Core.Entities.Common;
 
 namespace UcarMobileApi.Core.Entities.Payments;
 
@@ -14,7 +15,7 @@ public class Payment : EntityBase
     public int PaymentMethodId { get; set; }
     public PaymentMethod PaymentMethod { get; set; } = null!;
     public string ProviderPaymentId { get; set; } = string.Empty; // payment_intent id
-    public string? MetadataJson { get; set; }    // traceability
+    public Dictionary<string, string> MetadataJson { get; set; } = new();// traceability
     public long AmountCents { get; set; }
     public string Currency { get; set; } = "usd";
     public string Status { get; set; } = "pending";

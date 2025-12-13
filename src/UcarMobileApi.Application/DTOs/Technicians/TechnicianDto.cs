@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using UcarMobileApi.Application.DTOs.Common;
 using UcarMobileApi.Application.DTOs.Services;
 using UcarMobileApi.Application.DTOs.Users;
 
@@ -14,6 +15,9 @@ public class TechnicianDto : UserAccountDto
     /// Gets or sets a value indicating whether the technician is a freelance worker.
     /// </summary>
     public bool IsFreelance { get; set; } = false;
+
+    // Fixed address from which the technician usually departs
+    public AddressInfoDto BaseAddress { get; set; } = new();
 
     /// <summary>
     /// Gets or sets the list of service zones assigned to this technician.

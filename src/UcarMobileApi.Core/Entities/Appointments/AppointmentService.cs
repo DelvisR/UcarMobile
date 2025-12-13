@@ -1,8 +1,9 @@
+using UcarMobileApi.Core.Entities.Common;
 using UcarMobileApi.Core.Entities.Services;
 
 namespace UcarMobileApi.Core.Entities.Appointments;
 
-public class AppointmentService : EntityBase
+public class AppointmentService : AuditableEntity
 {
     public int AppointmentVehicleId { get; set; }
     public AppointmentVehicle AppointmentVehicle { get; set; } = null!;

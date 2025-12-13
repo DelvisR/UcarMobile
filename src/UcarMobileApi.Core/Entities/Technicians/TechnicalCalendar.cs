@@ -1,4 +1,5 @@
 using System;
+using UcarMobileApi.Core.Entities.Common;
 
 namespace UcarMobileApi.Core.Entities.Technicians;
 
@@ -16,7 +17,7 @@ public class TechnicalCalendarBlock : EntityBase
 {
     public int TechnicianId { get; set; }
     public Technician Technician { get; set; } = null!;
-    public DateTime? SpecificDate { get; set; }
+    public DateOnly? SpecificDate { get; set; }
     public DayOfWeek? WeeklyDay { get; set; }
     public TimeSpan? StartTime { get; set; }
     public TimeSpan? EndTime { get; set; }

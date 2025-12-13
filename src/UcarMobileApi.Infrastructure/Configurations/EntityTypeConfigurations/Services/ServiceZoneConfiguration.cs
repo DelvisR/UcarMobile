@@ -1,8 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using UcarMobileApi.Core.Entities.Services;
 
@@ -40,22 +36,10 @@ public class ServiceZoneConfiguration : IEntityTypeConfiguration<ServiceZone>
 
         // ZipCodes list -> jsonb
         builder.Property(z => z.ZipCodes)
-            .HasColumnType("jsonb")
-            .HasConversion(
-                v => System.Text.Json.JsonSerializer.Serialize(v, (System.Text.Json.JsonSerializerOptions?)null),
-                v => System.Text.Json.JsonSerializer.Deserialize<List<string>>(v, (System.Text.Json.JsonSerializerOptions?)null) ?? new List<string>()
-            )
-            .Metadata.SetValueComparer(
-                new ValueComparer<List<string>>(
-                    (c1, c2) => (c1 ?? new List<string>()).SequenceEqual(c2 ?? new List<string>()),
-                    c => c.Aggregate(0, (a, v) => HashCode.Combine(a, v.GetHashCode())),
-                    c => c.ToList()
-                )
-            );
+            .HasColumnType("text[]");
 
         // Useful indexes
         builder.HasIndex(z => z.IsActive);
-        builder.HasIndex(z => z.BaseAddress);
         builder.HasIndex(z => z.ZipCodes).HasMethod("gin"); // GIN index for jsonb
     }
 }

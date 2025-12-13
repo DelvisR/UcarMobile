@@ -30,7 +30,7 @@ public interface IFileStorageService
     /// Deletes a file from S3 and removes its record from the database.
     /// </summary>
     /// <param name="id">Stored file ID.</param>
-    /// <param name="ct">Cancellation token.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>True if deleted, false if not found.</returns>
     Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default);
 }

@@ -1,4 +1,5 @@
 using System;
+using UcarMobileApi.Core.Entities.Common;
 using UcarMobileApi.Core.Entities.Technicians;
 
 namespace UcarMobileApi.Core.Entities.Payments;

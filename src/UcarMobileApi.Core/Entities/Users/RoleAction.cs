@@ -1,6 +1,8 @@
+using UcarMobileApi.Core.Entities.Common;
+
 namespace UcarMobileApi.Core.Entities.Users;
 
-public class RoleAction : EntityBase
+public class RoleAction : AuditableEntity
 {
     public int RoleId { get; set; }
     public int ActionId { get; set; }

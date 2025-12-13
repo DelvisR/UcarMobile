@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
-using UcarMobileApi.Core.Entities;
+using UcarMobileApi.Core.Entities.Common;
 
 namespace UcarMobileApi.Infrastructure.Interceptors;
 

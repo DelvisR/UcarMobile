@@ -1,3 +1,5 @@
+using UcarMobileApi.Core.Entities.Common;
+
 namespace UcarMobileApi.Core.Entities.Configurations;
 
 public class BusinessParameter : EntityBase

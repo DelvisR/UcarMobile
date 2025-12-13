@@ -10,6 +10,7 @@ namespace UcarMobileApi.Controllers.Users;
 /// </summary>
 [ApiController]
 [Route("api/auth")]
+[Tags("User Authorization")]
 public class UserAuthorizationController(IUserAuthorizationService authService, CurrentUserService currentUser) : ControllerBase
 {
     /// <summary>

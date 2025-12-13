@@ -20,11 +20,6 @@ public class ServiceConfiguration : IEntityTypeConfiguration<Service>
             .HasForeignKey(s => s.ServiceCategoryId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        builder.HasMany(s => s.Estimates)
-            .WithOne(e => e.Service)
-            .HasForeignKey(e => e.ServiceId)
-            .OnDelete(DeleteBehavior.Cascade);
-
         builder.HasIndex(s => s.ServiceCategoryId);
         builder.HasIndex(s => new { s.ServiceCategoryId, s.Name }).IsUnique();
     }

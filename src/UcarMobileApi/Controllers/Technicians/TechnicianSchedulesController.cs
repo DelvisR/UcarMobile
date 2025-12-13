@@ -12,6 +12,7 @@ namespace UcarMobileApi.Controllers.Technicians;
 /// </summary>
 [ApiController]
 [Route("api/technicians/{technicianId}/schedules")]
+[Tags("Technician Schedules")]
 public class TechnicianSchedulesController(TechnicianCalendarService service) : ControllerBase
 {
     /// <summary>

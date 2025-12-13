@@ -1,3 +1,4 @@
+using UcarMobileApi.Core.Entities.Common;
 using UcarMobileApi.Core.Enums;
 
 namespace UcarMobileApi.Core.Entities.Users;

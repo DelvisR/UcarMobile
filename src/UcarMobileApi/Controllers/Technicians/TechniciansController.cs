@@ -173,11 +173,31 @@ public class TechniciansController(TechnicianService technicianService) : Contro
     /// <summary>
     /// Gets available time slots for a technician.
     /// </summary>
-    [HttpGet("availableSlots")]
+    /// <param name="request">AvailableSlotRequestDto</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>A dictionary keyed by date with a list of available slots ("T08:00:00-T08:30:00")</returns>
+    [HttpPost("availableSlots")]
     [AllowAnonymous]
-    public async Task<IActionResult> GetAvailability([FromQuery] bool includeToday = false, CancellationToken ct = default)
+    public async Task<IActionResult> GetAvailability([FromBody] AvailableSlotRequestDto request, CancellationToken ct)
     {
-        var data = await technicianService.GetAvailableSlotsAsync(includeToday, ct);
+        var data = await technicianService.GetAvailableSlotsAsync(request, ct);
         return Ok(data);
+    }
+
+    /// <summary>
+    /// Finds and returns the nearest available technician based on the request criteria.
+    /// </summary>
+    /// <remarks>
+    /// This endpoint accepts a <see cref="NearestAvailableRequestDto"/> containing search parameters
+    /// and returns the closest available technician. If no technician is found, a 404 response is returned.
+    /// </remarks>
+    /// <response code="200">Technician found and returned in the response body.</response>
+    /// <response code="404">No available technician was found.</response>
+    [HttpPost("nearestAvailable")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetNearestAvailable([FromBody] NearestAvailableRequestDto request, CancellationToken ct)
+    {
+        var technician = await technicianService.GetNearestAvailableTechnicianAsync(request, ct);
+        return technician == null ? NotFound() : Ok(technician);
     }
 }

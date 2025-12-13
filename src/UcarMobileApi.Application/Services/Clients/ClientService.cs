@@ -7,9 +7,9 @@ using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using FluentValidation;
 using Gridify;
-using Gridify.EntityFramework;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using UcarMobileApi.Application.Common.Helpers;
 using UcarMobileApi.Application.Common.Interfaces;
 using UcarMobileApi.Application.Common.Models;
 using UcarMobileApi.Application.DTOs.Clients;
@@ -28,7 +28,7 @@ public class ClientService(IMapper mapper, IAppDbContext context, BusinessParame
         var clients = context.Set<Client>().AsNoTracking();
 
         // AutoMapper ProjectTo + Filtering + Ordering + Paging
-        var qp = await clients.GridifyQueryableAsync(query, gridifymapper, ct);
+        var qp = await clients.GridifySafeAsync(query, gridifymapper, ct);
         return (qp.GeneratePaginationHttpHeaders(), await qp.Query.ProjectTo<ClientDto>(mapper.ConfigurationProvider).ToListAsync(ct));
     }
 

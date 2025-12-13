@@ -6,6 +6,12 @@
     <NoWarn>$(NoWarn);1591</NoWarn>
   </PropertyGroup>
   <ItemGroup>
+    <None Remove="Migrations\Scripts\vehicles_and_estimates.zip" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Migrations\Scripts\vehicles_and_estimates.zip" />
+  </ItemGroup>
+  <ItemGroup>
     <PackageReference Include="AWSSDK.S3" Version="4.0.9.1" />
     <PackageReference Include="AWSSDK.SecretsManager" Version="4.0.1.3" />
     <PackageReference Include="AWSSDK.SecretsManager.Caching" Version="2.0.0" />
@@ -29,8 +35,5 @@
   <ItemGroup>
     <ProjectReference Include="..\UcarMobileApi.Application\UcarMobileApi.Application.csproj" />
     <ProjectReference Include="..\UcarMobileApi.Core\UcarMobileApi.Core.csproj" />
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Migrations\" />
   </ItemGroup>
 </Project>

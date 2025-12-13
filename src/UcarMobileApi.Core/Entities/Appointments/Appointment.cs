@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UcarMobileApi.Core.Entities.Clients;
+using UcarMobileApi.Core.Entities.Common;
 using UcarMobileApi.Core.Entities.Payments;
 using UcarMobileApi.Core.Enums;
 
@@ -18,9 +19,7 @@ public class Appointment : EntityBase
     public DateTime? ScheduledEnd { get; set; }         // Optional, can be calculated
 
     // Service location (geofencing & radius validation)
-    public string ServiceAddress { get; set; } = string.Empty;
-    public double Lat { get; set; }
-    public double Lng { get; set; }
+    public AddressInfo ServiceAddress { get; set; } = new();
 
     // Pricing & billing
     public decimal EstimatedTotal { get; set; }

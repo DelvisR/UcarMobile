@@ -1,3 +1,5 @@
+using UcarMobileApi.Core.Entities.Common;
+
 namespace UcarMobileApi.Core.Entities.Appointments;
 
 public class AppointmentPart : EntityBase
@@ -9,6 +11,5 @@ public class AppointmentPart : EntityBase
     public string? PartNumber { get; set; }
     public int Quantity { get; set; } = 1;
     public decimal UnitPrice { get; set; }
-    public decimal TotalPrice { get; set; }
     public string? Notes { get; set; }
 }

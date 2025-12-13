@@ -8,7 +8,7 @@ using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using UcarMobileApi.Application.Common.Helpers;
 using UcarMobileApi.Application.Common.Interfaces;
-using UcarMobileApi.Application.DTOs;
+using UcarMobileApi.Application.DTOs.Services;
 using UcarMobileApi.Application.Services.Security;
 using UcarMobileApi.Application.Validators;
 

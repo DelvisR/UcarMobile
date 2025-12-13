@@ -37,31 +37,28 @@ public class PaymentConfiguration : IEntityTypeConfiguration<Payment>
         builder.Property(x => x.ErrorCode)
             .HasMaxLength(100);
 
+        builder.Property(e => e.MetadataJson)
+            .HasColumnType("jsonb");
+
         // Relationship: Payment → Client (many-to-one)
         builder.HasOne(x => x.Client)
             .WithMany(c => c.Payments) // ensure Client entity has ICollection<Payment> Payments
             .HasForeignKey(x => x.ClientId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .OnDelete(DeleteBehavior.Restrict);
 
         // Relationship: Payment → PaymentMethod (many-to-one)
         builder.HasOne(x => x.PaymentMethod)
             .WithMany(c => c.Payments) // ensure PaymentMethod entity has ICollection<Payment> Payments
             .HasForeignKey(x => x.PaymentMethodId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .OnDelete(DeleteBehavior.Restrict);
 
-        // Relationship: Payment → PaymentRefund (one-to-many)
-        builder.HasMany(x => x.Refunds)
-            .WithOne(r => r.Payment)
-            .HasForeignKey(r => r.PaymentId)
-            .OnDelete(DeleteBehavior.Cascade);
-
-        // Relationship with Appointment (optional)
+        // Relationship with Appointment
         builder.HasOne(x => x.Appointment)
             .WithMany(a => a.Payments)
             .HasForeignKey(x => x.AppointmentId)
             .OnDelete(DeleteBehavior.SetNull);
 
-        // Optional: unique index on provider payment ID
+        // Unique index on provider payment ID
         builder.HasIndex(x => x.ProviderPaymentId).IsUnique();
         builder.HasIndex(x => x.AppointmentId);
     }

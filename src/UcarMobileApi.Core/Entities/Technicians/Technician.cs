@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UcarMobileApi.Core.Entities.Appointments;
+using UcarMobileApi.Core.Entities.Common;
 using UcarMobileApi.Core.Entities.Payments;
 using UcarMobileApi.Core.Entities.Users;
 
@@ -22,6 +23,9 @@ namespace UcarMobileApi.Core.Entities.Technicians;
 public class Technician : User
 {
     public bool IsFreelance { get; set; } = false;
+
+    // Fixed address from which the technician usually departs
+    public AddressInfo BaseAddress { get; set; } = new();
 
     // Navigation property: appointments assigned to this technician
     public ICollection<AppointmentVehicle> Appointments { get; set; } = [];
@@ -50,5 +54,4 @@ public class Technician : User
     public bool ProviderPaymentsEnabled { get; set; }
 
     public ICollection<Payout> Payouts { get; set; } = [];
-
 }

@@ -19,16 +19,19 @@ public class ClientVehicleConfiguration : IEntityTypeConfiguration<ClientVehicle
             .HasMaxLength(20);
 
         builder.Property(cv => cv.Submodel)
-            .HasMaxLength(50);
+            .HasMaxLength(60);
 
-        builder.Property(cv => cv.EngineType)
-            .HasMaxLength(50);
+        builder.Property(cv => cv.Engine)
+            .HasMaxLength(80);
 
         builder.Property(cv => cv.VehicleType)
-            .HasMaxLength(50);
+            .HasMaxLength(60);
 
         builder.Property(cv => cv.BodyType)
-            .HasMaxLength(50);
+            .HasMaxLength(80);
+
+        builder.Property(e => e.Fuel)
+            .HasMaxLength(60);
 
         builder.Property(cv => cv.Notes)
             .HasMaxLength(1000);
@@ -40,13 +43,8 @@ public class ClientVehicleConfiguration : IEntityTypeConfiguration<ClientVehicle
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasOne(cv => cv.Vehicle)
-            .WithMany()
+            .WithMany(c => c.Vehicles)
             .HasForeignKey(cv => cv.VehicleId)
-            .OnDelete(DeleteBehavior.Cascade);
-
-        builder.HasMany(cv => cv.Appointments)
-            .WithOne(av => av.Vehicle)
-            .HasForeignKey(av => av.VehicleId)
             .OnDelete(DeleteBehavior.Cascade);
 
         // Indexes

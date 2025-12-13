@@ -1,6 +1,9 @@
+using UcarMobileApi.Core.Entities.Common;
+using UcarMobileApi.Core.Entities.Vehicles;
+
 namespace UcarMobileApi.Core.Entities.Services;
 
-public class Estimate : EntityBase
+public class Estimate : AuditableEntity
 {
     public int ServiceId { get; set; }
     public Service Service { get; set; } = null!;
