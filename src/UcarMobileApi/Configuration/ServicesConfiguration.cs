@@ -1,4 +1,5 @@
 using UcarMobileApi.Application.Services;
+using UcarMobileApi.Infrastructure.Services.Storage;
 
 namespace UcarMobileApi.Configuration;
 
@@ -28,6 +29,10 @@ public static class ServicesConfiguration
 
         // Register IHttpContextAccessor
         services.AddHttpContextAccessor();
+
+        // Register your BackgroundService in the .NET dependency container so that it runs automatically in parallel
+        // when the API is launched. Then, is Singleton by default
+        services.AddHostedService<StoredFileCleanupBackgroundService>();
 
         return services;
     }

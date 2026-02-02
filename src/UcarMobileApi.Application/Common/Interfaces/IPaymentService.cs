@@ -15,6 +15,7 @@ public interface IPaymentService
     /// Returns all payment methods for a client.
     /// </summary>
     Task<IEnumerable<PaymentMethodListDto>> GetPaymentMethodsAsync(string authProviderId, CancellationToken cancellationToken = default);
+    Task<IEnumerable<PaymentMethodListDto>> GetPaymentMethodsByClientIdAsync(int clientId, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Initializes a payment setup process for a client.
@@ -27,12 +28,15 @@ public interface IPaymentService
     /// </summary>
     Task<PaymentMethodDto> AttachPaymentMethodAsync(string authProviderId, PaymentMethodAttachDto dto, CancellationToken cancellationToken = default);
 
+    Task DetachPaymentMethodAsync(string authProviderId, int paymentMethodId, CancellationToken cancellationToken = default);
+
     Task SetDefaultPaymentMethodAsync(string authProviderId, int paymentMethodId, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Creates and confirms a payment for a specific client.
     /// </summary>
     Task<PaymentDto> CreatePaymentAsync(string authProviderId, PaymentCreateDto dto, CancellationToken cancellationToken = default);
+    Task<PaymentDto> CreatePaymentByClientIdAsync(int clientId, PaymentCreateDto dto, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Issues a refund for an existing payment, either partial or full.

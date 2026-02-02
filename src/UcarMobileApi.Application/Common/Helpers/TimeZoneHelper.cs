@@ -10,6 +10,26 @@ namespace UcarMobileApi.Application.Common.Helpers;
 public static class TimeZoneHelper
 {
     /// <summary>
+    /// Gets the TimeZone based on geographic coordinates
+    /// </summary>
+    /// <param name="latitude">Latitude coordinate</param>
+    /// <param name="longitude">Longitude coordinate</param>
+    /// <returns>IANA timezone ID from coordinates</returns>
+    public static string GetTimeZone(double latitude, double longitude)
+    {
+        try
+        {
+            // Get IANA timezone ID from coordinates
+            return TimeZoneLookup.GetTimeZone(latitude, longitude).Result;
+        }
+        catch
+        {
+            // Fallback to Eastern Time if lookup fails
+            return "America/Chicago";
+        }
+    }
+
+    /// <summary>
     /// Gets the TimeZoneInfo based on geographic coordinates
     /// </summary>
     /// <param name="latitude">Latitude coordinate</param>

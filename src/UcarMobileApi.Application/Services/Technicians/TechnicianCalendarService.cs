@@ -7,7 +7,7 @@ using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using UcarMobileApi.Application.Common.Interfaces;
 using UcarMobileApi.Application.DTOs.Technicians;
-using UcarMobileApi.Application.Validators.Technicians;
+using UcarMobileApi.Application.Validators.Common;
 using UcarMobileApi.Core.Entities.Technicians;
 
 namespace UcarMobileApi.Application.Services.Technicians;
@@ -15,7 +15,7 @@ namespace UcarMobileApi.Application.Services.Technicians;
 /// <summary>
 /// Provides CRUD operations for technician work schedules and calendar blocks.
 /// </summary>
-public class TechnicianCalendarService(IMapper mapper, IAppDbContext db)
+public class TechnicianCalendarService(IMapper mapper, IAppDbContext db, IValidatorResolver validatorResolver)
 {
     // ---------------------------------------------------------------------
     // WORK SCHEDULES
@@ -26,8 +26,7 @@ public class TechnicianCalendarService(IMapper mapper, IAppDbContext db)
     /// </summary>
     public async Task<TechnicalWorkScheduleReadDto> CreateScheduleAsync(TechnicalWorkScheduleDto dto, CancellationToken ct)
     {
-        var validator = new TechnicalWorkScheduleValidator();
-        await validator.ValidateAndThrowAsync(dto, ct);
+        await validatorResolver.Get<TechnicalWorkScheduleDto>().ValidateAndThrowAsync(dto, ct);
 
         var entity = mapper.Map<TechnicalWorkSchedule>(dto);
 
@@ -41,10 +40,7 @@ public class TechnicianCalendarService(IMapper mapper, IAppDbContext db)
     /// Creates multiple work schedules for a technician in a single bulk operation.
     /// Validates each item and performs a single database commit.
     /// </summary>
-    public async Task CreateManySchedulesAsync(
-        int technicianId,
-        IEnumerable<TechnicalWorkScheduleDto> items,
-        CancellationToken ct)
+    public async Task CreateManySchedulesAsync(int technicianId, IEnumerable<TechnicalWorkScheduleDto> items, CancellationToken ct)
     {
         var list = items.ToList();
 
@@ -53,8 +49,7 @@ public class TechnicianCalendarService(IMapper mapper, IAppDbContext db)
             item.TechnicianId = technicianId;
 
         // Validate the list
-        var validator = new TechnicalWorkScheduleListValidator();
-        await validator.ValidateAndThrowAsync(list, ct);
+        await validatorResolver.Get<IEnumerable<TechnicalWorkScheduleDto>>().ValidateAndThrowAsync(list, ct);
 
         // Map to entities
         var entities = mapper.Map<List<TechnicalWorkSchedule>>(list);
@@ -93,8 +88,7 @@ public class TechnicianCalendarService(IMapper mapper, IAppDbContext db)
     /// </summary>
     public async Task<TechnicalWorkScheduleReadDto> UpdateScheduleAsync(int id, TechnicalWorkScheduleDto dto, CancellationToken ct)
     {
-        var validator = new TechnicalWorkScheduleValidator();
-        await validator.ValidateAndThrowAsync(dto, ct);
+        await validatorResolver.Get<TechnicalWorkScheduleDto>().ValidateAndThrowAsync(dto, ct);
 
         var schedule = await db.Set<TechnicalWorkSchedule>().FindAsync([id], ct)
             ?? throw new KeyNotFoundException($"Schedule {id} not found.");
@@ -140,8 +134,7 @@ public class TechnicianCalendarService(IMapper mapper, IAppDbContext db)
     /// </summary>
     public async Task<TechnicalCalendarBlockReadDto> CreateBlockAsync(TechnicalCalendarBlockDto dto, CancellationToken ct)
     {
-        var validator = new TechnicalCalendarBlockValidator();
-        await validator.ValidateAndThrowAsync(dto, ct);
+        await validatorResolver.Get<TechnicalCalendarBlockDto>().ValidateAndThrowAsync(dto, ct);
 
         var entity = mapper.Map<TechnicalCalendarBlock>(dto);
 
@@ -179,13 +172,9 @@ public class TechnicianCalendarService(IMapper mapper, IAppDbContext db)
     /// <summary>
     /// Updates an existing calendar block.
     /// </summary>
-    public async Task<TechnicalCalendarBlockReadDto> UpdateBlockAsync(
-        int id,
-        TechnicalCalendarBlockDto dto,
-        CancellationToken ct)
+    public async Task<TechnicalCalendarBlockReadDto> UpdateBlockAsync(int id, TechnicalCalendarBlockDto dto, CancellationToken ct)
     {
-        var validator = new TechnicalCalendarBlockValidator();
-        await validator.ValidateAndThrowAsync(dto, ct);
+        await validatorResolver.Get<TechnicalCalendarBlockDto>().ValidateAndThrowAsync(dto, ct);
 
         var block = await db.Set<TechnicalCalendarBlock>().FindAsync([id], ct)
             ?? throw new KeyNotFoundException($"Block {id} not found.");

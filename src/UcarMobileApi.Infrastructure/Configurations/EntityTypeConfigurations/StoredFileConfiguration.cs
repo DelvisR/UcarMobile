@@ -27,6 +27,10 @@ public class StoredFileConfiguration : IEntityTypeConfiguration<StoredFile>
             .HasMaxLength(128)
             .IsRequired();
 
+        builder.Property(x => x.DeleteStatus)
+            .IsRequired()
+            .HasDefaultValue(DeleteStatus.None);
+
         builder.HasIndex(x => x.Key)
             .IsUnique();
 

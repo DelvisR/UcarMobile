@@ -27,6 +27,19 @@ public class PaymentsController(IPaymentService paymentService, CurrentUserServi
     }
 
     /// <summary>
+    /// Returns all saved payment methods for a client.
+    /// Requires 'ACTION_VIEW_PAYMENT_METHODS' action.
+    /// </summary>
+    [HttpGet("clients/{clientId:int}/methods")]
+    [RequireAction("ACTION_VIEW_PAYMENT_METHODS")]
+    [ProducesResponseType(typeof(IEnumerable<PaymentMethodListDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IEnumerable<PaymentMethodListDto>>> GetPaymentMethodsByClient(int clientId, CancellationToken cancellationToken)
+    {
+        var result = await paymentService.GetPaymentMethodsByClientIdAsync(clientId, cancellationToken);
+        return Ok(result);
+    }
+
+    /// <summary>
     /// Initializes a payment setup process for a specific client.
     /// Allows registering a card without charging it.
     /// Requires 'ACTION_MANAGE_PAYMENTS' action.
@@ -54,6 +67,19 @@ public class PaymentsController(IPaymentService paymentService, CurrentUserServi
     }
 
     /// <summary>
+    /// Detaches a payment method from a client and marks it as deleted locally.
+    /// Requires 'ACTION_MANAGE_PAYMENTS' action.
+    /// </summary>
+    [HttpDelete("methods/{paymentMethodId}")]
+    [RequireAction("ACTION_MANAGE_PAYMENTS")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> DetachPaymentMethod(int paymentMethodId, CancellationToken cancellationToken)
+    {
+        await paymentService.DetachPaymentMethodAsync(currentUser.AuthProviderId, paymentMethodId, cancellationToken);
+        return NoContent();
+    }
+
+    /// <summary>
     /// Sets a payment method as the default for the current user.
     /// Requires 'ACTION_MANAGE_PAYMENTS' action.
     /// </summary>
@@ -78,6 +104,21 @@ public class PaymentsController(IPaymentService paymentService, CurrentUserServi
         var result = await paymentService.CreatePaymentAsync(currentUser.AuthProviderId, dto, cancellationToken);
         return Ok(result);
     }
+
+    /// <summary>
+    /// Creates and confirms a payment for a specific client.
+    /// Requires 'ACTION_CREATE_PAYMENT' action.
+    /// </summary>
+    [HttpPost("clients/{clientId:int}/charge")]
+    [RequireAction("ACTION_CREATE_PAYMENT")]
+    [ProducesResponseType(typeof(PaymentDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<PaymentDto>> CreatePaymentByClient(int clientId, [FromBody] PaymentCreateDto dto, CancellationToken cancellationToken)
+    {
+        var result = await paymentService.CreatePaymentByClientIdAsync(clientId, dto, cancellationToken);
+
+        return Ok(result);
+    }
+
 
     /// <summary>
     /// Issues a refund for a specific payment.

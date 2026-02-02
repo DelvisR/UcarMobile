@@ -58,7 +58,7 @@ public class UsersController(UserService userService) : ControllerBase
     [HttpPost]
     [RequireAction("ACTION_CREATE_USER")]
     [ProducesResponseType(StatusCodes.Status201Created)]
-    public async Task<IActionResult> CreateUser(UserAccountDto userDto, CancellationToken ct)
+    public async Task<IActionResult> CreateUser([FromBody] UserAccountDto userDto, CancellationToken ct)
     {
         await userService.CreateUserAsync(userDto, ct);
 
@@ -73,14 +73,69 @@ public class UsersController(UserService userService) : ControllerBase
     /// <param name="userDto">The user update data.</param>
     /// <param name="ct">Request cancellation token.</param>
     /// <response code="204">No Content.</response>
-    [HttpPut("{id}")]
+    [HttpPut("{id:int}")]
     [RequireAction("ACTION_EDIT_USER")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public async Task<IActionResult> UpdateUser(int id, UserAccountDto userDto, CancellationToken ct)
+    public async Task<IActionResult> UpdateUser(int id, [FromBody] UserAccountDto userDto, CancellationToken ct)
     {
         if (id != userDto.Id) return BadRequest("Id in route and payload do not match.");
 
         await userService.UpdateUserAsync(id, userDto, ct);
+        return NoContent();
+    }
+
+    /// <summary>
+    /// Uploads a profile image for the specified user.
+    /// If an image already exists, it is replaced.
+    /// Requires 'ACTION_EDIT_USER' action.
+    /// </summary>
+    /// <param name="id">
+    /// The unique identifier of the user.
+    /// </param>
+    /// <param name="image">
+    /// The image file to upload. Supported formats: JPG, PNG, WEBP.
+    /// The maximum allowed size is 2 MB.
+    /// </param>
+    /// <param name="ct">
+    /// A cancellation token to cancel the operation.
+    /// </param>
+    /// <returns>
+    /// Returns <see cref="StatusCodes.Status204NoContent"/> when the image is successfully
+    /// created or replaced.
+    /// </returns>
+    [HttpPut("{id:int}/image")]
+    [Consumes("multipart/form-data")]
+    [RequireAction("ACTION_EDIT_USER")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> UpsertUserImage(int id, IFormFile image, CancellationToken ct)
+    {
+        await userService.UpsertUserImageAsync(id, image, ct);
+        return NoContent();
+    }
+
+    /// <summary>
+    /// Deletes the profile image of the specified user.
+    /// Requires 'ACTION_EDIT_USER' action.
+    /// </summary>
+    /// <param name="id">
+    /// The unique identifier of the user.
+    /// </param>
+    /// <param name="ct">
+    /// A cancellation token to cancel the operation.
+    /// </param>
+    /// <returns>
+    /// Returns <see cref="StatusCodes.Status204NoContent"/> when the image is successfully deleted,
+    /// or when the user does not have a profile image.
+    /// </returns>
+    [HttpDelete("{id:int}/image")]
+    [RequireAction("ACTION_EDIT_USER")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeleteUserImage(int id, CancellationToken ct)
+    {
+        await userService.DeleteUserImageAsync(id, ct);
         return NoContent();
     }
 

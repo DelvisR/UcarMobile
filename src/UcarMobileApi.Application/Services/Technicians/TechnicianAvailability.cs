@@ -18,75 +18,86 @@ namespace UcarMobileApi.Application.Services.Technicians;
 public static class TechnicianAvailability
 {
     /// <summary>
-    /// Returns the nearest available technician that can cover the service at the given UTC time range.
-    /// All input dates must be in UTC. Uses real spherical distance (meters) via PostGIS geography.
-    /// Handles partial blocks with time overlap and ignores past specific-date blocks.
+    /// Builds the base query used to retrieve technicians that are
+    /// available to cover a service during the specified UTC time range.
+    ///
+    /// This method encapsulates ALL availability rules and acts as the
+    /// single source of truth for technician availability.
+    ///
+    /// IMPORTANT:
+    /// - This method does NOT execute the query.
+    /// - It does NOT calculate distance.
+    /// - It does NOT apply ordering.
+    /// - It does NOT apply spatial filtering.
+    ///
+    /// All input date/times must be in UTC.
     /// </summary>
-    /// <param name="db">Database context</param>
+    /// <param name="db">Application database context</param>
     /// <param name="businessParameters">Global business parameters service</param>
-    /// <param name="lat">Client latitude</param>
-    /// <param name="lng">Client longitude</param>
     /// <param name="zipCode">Client ZIP code</param>
     /// <param name="specialties">Required service category IDs</param>
-    /// <param name="appointmentStartUtc">Appointment start time in UTC</param>
-    /// <param name="appointmentEndUtc">Appointment end time in UTC (typically start + 4h)</param>
+    /// <param name="appointmentStartUtc">Appointment start time (UTC)</param>
+    /// <param name="appointmentEndUtc">Appointment end time (UTC)</param>
     /// <param name="ct">Cancellation token</param>
-    /// <returns>The closest available technician, or null if none found</returns>
-    public static async Task<Technician?> GetNearestAvailableTechnicianAsync(IAppDbContext db,
-        BusinessParameterService businessParameters, double lat, double lng, string zipCode, List<int> specialties,
-        DateTime appointmentStartUtc,   // Already in UTC
-        DateTime appointmentEndUtc,     // Already in UTC
-        CancellationToken ct = default)
+    /// <returns>
+    /// An <see cref="IQueryable{Technician}"/> representing all technicians
+    /// that satisfy availability rules. The query is not executed.
+    /// </returns>
+    private static async Task<IQueryable<Technician>> BuildAvailableTechniciansQueryAsync(IAppDbContext db, BusinessParameterService businessParameters,
+        string zipCode, List<int> specialties, DateTime appointmentStartUtc, DateTime appointmentEndUtc, CancellationToken ct)
     {
-        var apptDuration = await businessParameters.GetValueAsync<int>(BusinessParameterKeys.Scheduling.RepairBufferHours, ct); //4 h
+        // Duration buffer (in hours) applied when ScheduledEnd is null
+        var apptDuration = await businessParameters.GetValueAsync<int>(BusinessParameterKeys.Scheduling.RepairBufferHours, ct);
 
-        // 1. Create client point (SRID 4326)
-        var clientPoint = new Point(lng, lat) { SRID = 4326 };
-
-        // 2. Get active service zones that cover this ZIP code
+        // Resolve all active service zones that include the given ZIP code
         var serviceZoneIds = await db.Set<ServiceZone>()
             .Where(sz => sz.IsActive && sz.ZipCodes.Contains(zipCode))
             .Select(sz => sz.Id)
             .ToListAsync(ct);
 
+        // No service zones → no technician can cover this request
         if (serviceZoneIds.Count == 0)
-            return null;
+            return Enumerable.Empty<Technician>().AsQueryable();
 
-        // Extract day of week and date for filtering (from UTC, but DayOfWeek is invariant)
+        // Extract date/time components from UTC appointment time
         var appointmentDayOfWeek = appointmentStartUtc.DayOfWeek;
         var appointmentDateOnly = DateOnly.FromDateTime(appointmentStartUtc);
         var appointmentStartTime = appointmentStartUtc.TimeOfDay;
         var appointmentEndTime = appointmentEndUtc.TimeOfDay;
 
-        // 3. Main query: find the closest technician with full availability and correct filters
-        return await db.Set<Technician>()
+        return db.Set<Technician>()
             .AsNoTracking()
-            .Where(t => t.IsActive
+            .Where(t =>
+                // Technician must be active
+                t.IsActive
 
-                // Covers a service zone that includes the client's ZIP
-                && t.ServiceZones.Any(sz => serviceZoneIds.Contains(sz.ServiceZoneId))
+                // Technician must cover at least one service zone for the ZIP
+                && t.ServiceZones.Any(sz =>
+                    serviceZoneIds.Contains(sz.ServiceZoneId))
 
-                // Has all required specialties
-                && specialties.All(requiredId => t.Specialities.Any(s => s.ServiceCategoryId == requiredId))
+                // Technician must include ALL required specialties
+                && specialties.All(requiredId =>
+                    t.Specialities.Any(s =>
+                        s.ServiceCategoryId == requiredId))
 
-                // Has an active work schedule for this day of week
-                && t.WorkSchedules.Any(ws => ws.IsActive && ws.Day == appointmentDayOfWeek)
+                // Technician must have an active work schedule for that day
+                && t.WorkSchedules.Any(ws =>
+                    ws.IsActive && ws.Day == appointmentDayOfWeek)
 
-                // No overlapping block: full-day or partial time range
-                // - For SpecificDate: only if date >= appointment date (ignore past)
-                // - For WeeklyDay: always if day matches
-                // - Overlap: block start/end intersects with appointment start/end
+                // Technician must NOT have any blocking calendar entry
                 && !t.CalendarBlocks.Any(cb => cb.IsActive
                     && (
-                        // Specific date block (future or current only)
+                        // Specific date block (same day only)
                         (cb.SpecificDate.HasValue
-                         && cb.SpecificDate.Value >= appointmentDateOnly
                          && cb.SpecificDate.Value == appointmentDateOnly
                          && (
                              cb.AllDay
-                             || (cb.StartTime.HasValue && cb.EndTime.HasValue
+                             || (
+                                 cb.StartTime.HasValue
+                                 && cb.EndTime.HasValue
                                  && cb.StartTime.Value < appointmentEndTime
-                                 && cb.EndTime.Value > appointmentStartTime)
+                                 && cb.EndTime.Value > appointmentStartTime
+                             )
                          ))
                         ||
                         // Weekly recurring block
@@ -94,21 +105,110 @@ public static class TechnicianAvailability
                          && cb.WeeklyDay.Value == appointmentDayOfWeek
                          && (
                              cb.AllDay
-                             || (cb.StartTime.HasValue && cb.EndTime.HasValue
+                             || (
+                                 cb.StartTime.HasValue
+                                 && cb.EndTime.HasValue
                                  && cb.StartTime.Value < appointmentEndTime
-                                 && cb.EndTime.Value > appointmentStartTime)
+                                 && cb.EndTime.Value > appointmentStartTime
+                             )
                          ))
                     ))
 
-                // No overlapping appointment (handles null ScheduledEnd safely)
+                // Technician must NOT have an overlapping appointment
                 && !t.Appointments.Any(a =>
-                    a.Appointment.ScheduledStart < appointmentEndUtc &&
-                    (a.Appointment.ScheduledEnd ?? a.Appointment.ScheduledStart.AddHours(apptDuration)) > appointmentStartUtc)
-            )
-            // Real distance using PostGIS geography (spheroid)
-            .OrderBy(t => EF.Functions.Distance(t.BaseAddress.BasePoint, clientPoint, false))
-            //.ProjectTo<TechnicianDto>(mapper.ConfigurationProvider)
-            .FirstOrDefaultAsync(ct);
+                    a.Appointment.ScheduledStart < appointmentEndUtc
+                    && (
+                        a.Appointment.ScheduledEnd
+                        ?? a.Appointment.ScheduledStart.AddHours(apptDuration)
+                    ) > appointmentStartUtc)
+            );
+    }
+
+    /// <summary>
+    /// Returns all available technicians that can cover the service
+    /// during the specified UTC time range, ordered by distance from
+    /// the service location.
+    ///
+    /// Distance is calculated using PostGIS geography (meters).
+    /// </summary>
+    /// <param name="db">Application database context</param>
+    /// <param name="businessParameters">Global business parameters service</param>
+    /// <param name="lat">Client latitude</param>
+    /// <param name="lng">Client longitude</param>
+    /// <param name="zipCode">Client ZIP code</param>
+    /// <param name="specialties">Required service category IDs</param>
+    /// <param name="appointmentStartUtc">Appointment start time (UTC)</param>
+    /// <param name="appointmentEndUtc">Appointment end time (UTC)</param>
+    /// <param name="ct">Cancellation token</param>
+    /// <returns>
+    /// Ordered list of available technicians with distance (nearest first)
+    /// </returns>
+    public static async Task<IReadOnlyList<TechnicianWithDistance>> GetAvailableTechniciansWithDistanceAsync(IAppDbContext db,
+        BusinessParameterService businessParameters, double lat, double lng, string zipCode, List<int> specialties,
+        DateTime appointmentStartUtc, DateTime appointmentEndUtc, CancellationToken ct)
+    {
+        var clientPoint = new Point(lng, lat) { SRID = 4326 };
+
+        var baseQuery = await BuildAvailableTechniciansQueryAsync(db, businessParameters, zipCode, specialties, appointmentStartUtc, appointmentEndUtc, ct);
+
+        var query = baseQuery
+            .Select(t => new
+            {
+                Technician = t,
+                DistanceMeters = EF.Functions.Distance(t.BaseAddress.BasePoint, clientPoint, false)
+            })
+            .Where(x => EF.Functions.IsWithinDistance(x.Technician.BaseAddress.BasePoint, clientPoint, 50_000, false)) // default 50 km
+            .OrderBy(x => x.DistanceMeters);
+
+        var result = await query.AsNoTracking().ToListAsync(ct);
+
+        return result
+            .Select(x => new TechnicianWithDistance(x.Technician, x.DistanceMeters))
+            .ToList();
+    }
+
+    /// <summary>
+    /// Returns the nearest available technician that can cover the
+    /// service during the specified UTC time range.
+    ///
+    /// This method applies spatial pre-filtering (ST_DWithin) and
+    /// server-side ordering with LIMIT 1 for optimal performance.
+    /// </summary>
+    /// <param name="db">Application database context</param>
+    /// <param name="businessParameters">Global business parameters service</param>
+    /// <param name="lat">Client latitude</param>
+    /// <param name="lng">Client longitude</param>
+    /// <param name="zipCode">Client ZIP code</param>
+    /// <param name="specialties">Required service category IDs</param>
+    /// <param name="appointmentStartUtc">Appointment start time (UTC)</param>
+    /// <param name="appointmentEndUtc">Appointment end time (UTC)</param>
+    /// <param name="searchRadiusMeters">
+    /// Maximum search radius (meters) used for spatial pre-filtering
+    /// </param>
+    /// <param name="ct">Cancellation token</param>
+    /// <returns>
+    /// The nearest available technician, or null if none found
+    /// </returns>
+    public static async Task<Technician?> GetNearestAvailableTechnicianAsync(IAppDbContext db, BusinessParameterService businessParameters,
+        double lat, double lng, string zipCode, List<int> specialties, DateTime appointmentStartUtc, DateTime appointmentEndUtc,
+        double searchRadiusMeters, CancellationToken ct)
+    {
+        var clientPoint = new Point(lng, lat) { SRID = 4326 };
+
+        var baseQuery = await BuildAvailableTechniciansQueryAsync(db, businessParameters, zipCode, specialties, appointmentStartUtc, appointmentEndUtc, ct);
+
+        // Project distance for ordering
+        var query = baseQuery
+            .Select(t => new
+            {
+                Technician = t,
+                DistanceMeters = EF.Functions.Distance(t.BaseAddress.BasePoint, clientPoint, false)
+            })
+            .Where(x => EF.Functions.IsWithinDistance(x.Technician.BaseAddress.BasePoint, clientPoint, searchRadiusMeters, false))
+            .OrderBy(x => x.DistanceMeters);
+
+        var result = await query.AsNoTracking().FirstOrDefaultAsync(ct);
+        return result?.Technician;
     }
 
     #region usin sql

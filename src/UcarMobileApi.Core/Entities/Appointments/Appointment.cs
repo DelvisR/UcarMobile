@@ -7,7 +7,7 @@ using UcarMobileApi.Core.Enums;
 
 namespace UcarMobileApi.Core.Entities.Appointments;
 
-public class Appointment : EntityBase
+public partial class Appointment : EntityBase
 {
     public int ClientId { get; set; }
     public Client Client { get; set; } = null!;
@@ -17,35 +17,40 @@ public class Appointment : EntityBase
     // Scheduling
     public DateTime ScheduledStart { get; set; }        // Client-selected date/time
     public DateTime? ScheduledEnd { get; set; }         // Optional, can be calculated
+    public DateTime? CompletedAt { get; set; }
 
     // Service location (geofencing & radius validation)
-    public AddressInfo ServiceAddress { get; set; } = new();
+    public AddressInfo ServiceAddress { get; set; } = null!;
 
     // Pricing & billing
     public decimal EstimatedTotal { get; set; }
-    // Payment Status (Separated from workflow status for better querying)
+    public decimal Tax { get; set; }
+
+    // Payment
+    public int? PaymentMethodId { get; set; }
+    public PaymentMethod? PaymentMethod { get; set; }
     public PaymentStatus PaymentStatus { get; set; } = PaymentStatus.Unpaid;
 
-    // Current status
+    // Current status: Requested > Confirmed > Assigned > EnRoute > InProgress > Completed > Closed
     public AppointmentStatus Status { get; set; } = AppointmentStatus.Requested;
 
     public ICollection<AppointmentNote> Notes { get; set; } = [];
     public ICollection<AppointmentDocument> Documents { get; set; } = [];
     public ICollection<Payment> Payments { get; set; } = [];
+
+    public int WarrantyMonths { get; set; }
+    public int WarrantyMiles { get; set; }
+    public string? CancellationReason { get; set; }
+
 }
 
+// IMPORTANT: AppointmentStatus ordering matters (Completed and above are immutable)
 public enum AppointmentStatus : byte
 {
     Requested = 1,         // Lead captured, not confirmed yet
-    PendingVerification,   // Email verification link sent
-    PendingPaymentMethod,  // Email verified, waiting for card
-    PendingConfirmation,   // Agent-scheduled, waiting for client actions
     Confirmed,             // Fully locked (email + payment OK)
-    Assigned,              // Technician assigned (manual or auto)
     EnRoute,
     InProgress,
-    Completed,             // Work finished, invoice generated
-    Closed,                // Paid + review possible
-    Cancelled,
-    Expired                // Pending states that timed out
+    Completed,             // Work finished, invoice generated, Paid + review possible
+    Cancelled
 }

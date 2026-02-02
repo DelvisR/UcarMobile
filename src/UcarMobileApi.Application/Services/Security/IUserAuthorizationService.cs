@@ -46,6 +46,14 @@ public interface IUserAuthorizationService
     Task<List<UserActionDto>> GetUserActionsAsync(string authProviderId, CancellationToken ct);
 
     /// <summary>
+    /// Gets cached User.Id for a given authProviderId (populates same cache as GetUserActionsAsync).
+    /// </summary>
+    /// <param name="authProviderId">The Cognito ID of the user.</param>
+    /// <param name="ct">Cancellation Token</param>
+    /// <returns>User.Id if found, otherwise null.</returns>
+    Task<int?> GetUserIdAsync(string authProviderId, CancellationToken ct);
+
+    /// <summary>
     /// Gets all roles for a given user.
     /// </summary>
     /// <param name="authProviderId">The Cognito ID of the user.</param>

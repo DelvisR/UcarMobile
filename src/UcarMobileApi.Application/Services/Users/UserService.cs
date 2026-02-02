@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -13,12 +14,15 @@ using UcarMobileApi.Application.Common.Interfaces;
 using UcarMobileApi.Application.Common.Models;
 using UcarMobileApi.Application.DTOs.Users;
 using UcarMobileApi.Application.Utilities;
+using UcarMobileApi.Application.Validators.Common;
 using UcarMobileApi.Application.Validators.Users;
+using UcarMobileApi.Core.Entities.Storage;
 using UcarMobileApi.Core.Entities.Users;
 
 namespace UcarMobileApi.Application.Services.Users;
 
-public class UserService(IMapper mapper, IAppDbContext context, IGridifyMapper<User> gridifymapper)
+public class UserService(IMapper mapper, IAppDbContext context, IGridifyMapper<User> gridifymapper, IValidatorResolver validatorResolver,
+    FileUploadService fileUploadService)
 {
     public async Task<(IHeaderDictionary, IEnumerable<UserAccountDto>)> GetUsersAsync(QueryFilter query, CancellationToken ct)
     {
@@ -42,36 +46,89 @@ public class UserService(IMapper mapper, IAppDbContext context, IGridifyMapper<U
     public async Task CreateUserAsync(UserAccountDto dto, CancellationToken ct)
     {
         // Validation
-        var validator = new UserAccountValidator(context);
-        await validator.ValidateAndThrowAsync(dto, ct);
+        await validatorResolver.Get<UserAccountDto>().ValidateAndThrowAsync(dto, ct);
 
         var user = mapper.Map<User>(dto);
 
         context.Set<User>().Add(user);
+
         await context.SaveChangesAsync(ct);
     }
 
     public async Task UpdateUserAsync(int id, UserAccountDto dto, CancellationToken ct)
     {
         // Validation
-        var validator = new UserAccountValidator(context);
-        await validator.ValidateAndThrowAsync(dto, ct);
+        await validatorResolver.Get<UserAccountDto>().ValidateAndThrowAsync(dto, ct);
 
         var user = await context.Set<User>()
-            .Include(u => u.UserRoles)
-            .ThenInclude(ur => ur.Role)
-            .FirstOrDefaultAsync(u => u.Id == id, ct);
+                       .Include(u => u.UserRoles)
+                       .ThenInclude(ur => ur.Role)
+                       .FirstOrDefaultAsync(u => u.Id == id, ct)
+                   ?? throw new KeyNotFoundException($"User with ID {id} not found.");
 
-        if (user != null)
+        mapper.Map(dto, user);
+
+        await context.SaveChangesAsync(ct);
+    }
+
+    public async Task UpsertUserImageAsync(int userId, IFormFile image, CancellationToken ct)
+    {
+        if (image is null)
+            throw new ValidationException("Image is required.");
+
+        if (image.Length > UserValidationConstants.MaxImageSize)
+            throw new ValidationException("The image cannot exceed 2 MB.");
+
+        if (!UserValidationConstants.AllowedMimeTypes.Contains(image.ContentType))
+            throw new ValidationException("Image format not allowed. Only JPG, PNG, or WEBP are accepted.");
+
+        var user = await context.Set<User>()
+                       .Include(u => u.ImageStoredFile)
+                       .FirstOrDefaultAsync(u => u.Id == userId, ct)
+                   ?? throw new KeyNotFoundException($"User with ID {userId} not found.");
+
+        IReadOnlyCollection<StoredFileMetadata> uploaded = [];
+        var oldImage = user.ImageStoredFile;
+
+        try
         {
-            mapper.Map(dto, user);
+            uploaded = await fileUploadService.UploadFilesAsync([image], prefix: "UserImages", ct);
+
+            var metadata = uploaded.Single();
+            var newStoredFile = mapper.Map<StoredFile>(metadata);
+
+            user.ImageStoredFile = newStoredFile;
+            context.Set<StoredFile>().Add(newStoredFile);
+
+            if (oldImage is not null)
+            {
+                oldImage.IsDeleted = true;
+                oldImage.DeleteStatus = DeleteStatus.Pending;
+            }
 
             await context.SaveChangesAsync(ct);
         }
-        else
+        catch
         {
-            throw new KeyNotFoundException($"User with ID {id} not found.");
+            await fileUploadService.CleanupUploadedFilesAsync(uploaded, ct);
+            throw;
         }
+    }
+    public async Task DeleteUserImageAsync(int userId, CancellationToken ct)
+    {
+        var user = await context.Set<User>()
+                       .Include(u => u.ImageStoredFile)
+                       .FirstOrDefaultAsync(u => u.Id == userId, ct)
+                   ?? throw new KeyNotFoundException();
+
+        if (user.ImageStoredFile is null)
+            return;
+
+        user.ImageStoredFile.IsDeleted = true;
+        user.ImageStoredFile.DeleteStatus = DeleteStatus.Pending;
+        user.ImageStoredFile = null;
+
+        await context.SaveChangesAsync(ct);
     }
 
     public async Task ActivateUserAsync(int id, bool active, CancellationToken ct)
@@ -102,8 +159,7 @@ public class UserService(IMapper mapper, IAppDbContext context, IGridifyMapper<U
     public async Task AssignRolesAsync(int userId, List<RoleDto> roles, CancellationToken ct)
     {
         // Validate roles list before applying changes
-        var validator = new UserRoleListValidator();
-        await validator.ValidateAndThrowAsync(roles, ct);
+        await validatorResolver.Get<List<RoleDto>>().ValidateAndThrowAsync(roles, ct);
 
         // Load the user with UserRoles to allow AutoMapper.Collection to sync the collection
         var user = await context.Set<User>()

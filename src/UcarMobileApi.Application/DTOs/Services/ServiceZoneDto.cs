@@ -17,4 +17,4 @@ public class ServiceZoneDto
 /// <summary>
 /// Result structure returned by address validation.
 /// </summary>
-public record AddressValidationResult(bool IsInside, double Lat, double Lng, string Zip);
+public record AddressValidationResult(bool IsInside, double Lat, double Lng, string Zip, string Tz);

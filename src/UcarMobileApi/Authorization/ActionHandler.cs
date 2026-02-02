@@ -38,6 +38,11 @@ public class ActionHandler(IUserAuthorizationService authorizationService) : Aut
         if (string.IsNullOrWhiteSpace(authProviderId))
             return;
 
+        // First check if user exists (cached UserId) to avoid loading actions when the user doesn't exist
+        var userId = await _authorizationService.GetUserIdAsync(authProviderId, httpContext.RequestAborted);
+        if (userId is null)
+            return;
+
         // Check if the user has the required action
         var hasAction = await _authorizationService.HasActionAsync(authProviderId, requirement.Action, httpContext.RequestAborted);
 

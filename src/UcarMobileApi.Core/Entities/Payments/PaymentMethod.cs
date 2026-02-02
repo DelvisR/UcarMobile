@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using UcarMobileApi.Core.Entities.Appointments;
 using UcarMobileApi.Core.Entities.Clients;
 using UcarMobileApi.Core.Entities.Common;
 
@@ -51,4 +52,5 @@ public class PaymentMethod : EntityBase
     public Client Client { get; set; } = null!;
 
     public IEnumerable<Payment> Payments { get; set; } = [];
+    public IEnumerable<Appointment> Appointments { get; set; } = [];
 }

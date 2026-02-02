@@ -1,4 +1,7 @@
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
+using UcarMobileApi.Application.Common.Interfaces;
+using UcarMobileApi.Converters;
 
 namespace UcarMobileApi.Configuration;
 
@@ -20,11 +23,19 @@ public static class MvcConfiguration
         return services.AddControllers()
             .AddNewtonsoftJson(opt =>
             {
-                // Prevent reference loops (common with EF navigation properties)
+				// Prevent reference loops (common with EF navigation properties)
                 opt.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
-
-                // Do not include null properties in JSON
+				// Do not include null properties in JSON
                 opt.SerializerSettings.NullValueHandling = NullValueHandling.Ignore;
+
+				// Serialize/deserialize enums as strings
+                opt.SerializerSettings.Converters.Add(new StringEnumConverter());
+
+                // Add StoredFileDto converter
+                opt.SerializerSettings.Converters.Add(new StoredFileDtoNewtonsoftConverter(
+                    services.BuildServiceProvider().GetRequiredService<IStorageService>()
+                ));
             });
     }
+
 }

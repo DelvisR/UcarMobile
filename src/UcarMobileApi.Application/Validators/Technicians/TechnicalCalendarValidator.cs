@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using FluentValidation;
 using UcarMobileApi.Application.DTOs.Technicians;
+using UcarMobileApi.Application.Validators.Common;
 
 namespace UcarMobileApi.Application.Validators.Technicians;
 
@@ -14,7 +15,7 @@ public class TechnicalWorkScheduleValidator : AbstractValidator<TechnicalWorkSch
         RuleFor(x => x.EndTime).NotNull();
         RuleFor(x => x).Must(x => x.StartTime < x.EndTime)
             .WithMessage("StartTime must be less than EndTime.");
-        RuleFor(x => x.Day).IsInEnum();
+        RuleFor(x => x.Day).IsInEnum().WithMessage(ValidatorErrors.InvalidValue);
     }
 }
 

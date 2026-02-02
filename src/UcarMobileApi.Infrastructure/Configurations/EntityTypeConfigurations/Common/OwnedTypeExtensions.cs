@@ -15,7 +15,7 @@ public static class OwnedTypeExtensions
         builder.Property(a => a.ZipCode).HasColumnName("ZipCode")
             .HasMaxLength(10).IsRequired().HasDefaultValue("75074"); ;
 
-        builder.Property(a => a.BasePoint)
+        builder.Property(a => a.BasePoint).HasColumnName("BasePoint")
             .HasColumnType("geometry(Point, 4326)")
             .HasDefaultValueSql("ST_SetSRID(ST_MakePoint(-96.6702438, 33.0146527), 4326)");
 

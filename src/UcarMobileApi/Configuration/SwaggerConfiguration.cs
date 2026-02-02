@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.SwaggerGen;
+using UcarMobileApi.Filters;
 
 namespace UcarMobileApi.Configuration;
 
@@ -43,11 +45,16 @@ public static class SwaggerConfiguration
                 Description = "Enter 'Bearer' followed by your valid Cognito JWT token.\nExample: Bearer eyJhbGciOi..."
             });
 
+            // Display enums as strings
+            c.UseInlineDefinitionsForEnums();
+
             // Remove global security requirement, we'll add it per endpoint via filter
             // c.AddSecurityRequirement(...) removed
 
             // Apply OperationFilter to automatically add security only to protected endpoints
             c.OperationFilter<AuthResponsesOperationFilter>();
+
+            c.SchemaFilter<EnumAsStringSchemaFilter>();
 
             // XML Comments: register ALL projects that generate XML
             var basePath = AppContext.BaseDirectory;
@@ -56,7 +63,12 @@ public static class SwaggerConfiguration
             {
                 c.IncludeXmlComments(file, true);
             }
+
+            // Custom filter to ignore specific properties from Swagger
+            c.SchemaFilter<SwaggerIgnoreFilter>();
         });
+
+        services.AddSwaggerGenNewtonsoftSupport();
 
         return services;
     }
@@ -125,5 +137,47 @@ public class AuthResponsesOperationFilter : IOperationFilter
                 ] = Array.Empty<string>()
             }
         };
+    }
+}
+
+/// <summary>
+/// Swagger schema filter that forces enum types to be represented as strings
+/// instead of numeric values.
+/// 
+/// This improves API usability and documentation by exposing enum names
+/// (e.g. "Android", "iOS") rather than their underlying numeric values (e.g. 1, 2).
+/// 
+/// Note:
+/// This filter affects Swagger/OpenAPI documentation only and does not alter
+/// JSON serialization behavior at runtime.
+/// </summary>
+public sealed class EnumAsStringSchemaFilter : ISchemaFilter
+{
+    /// <summary>
+    /// Applies the schema transformation for enum types.
+    /// 
+    /// When the target type is an enum, the schema is modified to:
+    /// - Use "string" as the OpenAPI type
+    /// - Remove numeric enum values
+    /// - Populate the enum list with the enum member names
+    /// </summary>
+    /// <param name="schema">The OpenAPI schema being generated.</param>
+    /// <param name="context">Contextual information about the schema generation.</param>
+    public void Apply(OpenApiSchema schema, SchemaFilterContext context)
+    {
+        var type = context.Type;
+
+        if (!type.IsEnum)
+            return;
+
+        schema.Type = "string";
+        schema.Format = null;
+
+        schema.Enum.Clear();
+
+        foreach (var name in Enum.GetNames(type))
+        {
+            schema.Enum.Add(new OpenApiString(name));
+        }
     }
 }

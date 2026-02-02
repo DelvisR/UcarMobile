@@ -2,6 +2,7 @@ using System.Linq;
 using AutoMapper;
 using AutoMapper.EquivalencyExpression;
 using UcarMobileApi.Application.DTOs.Users;
+using UcarMobileApi.Application.Mapping.Common;
 using UcarMobileApi.Core.Entities.Users;
 
 namespace UcarMobileApi.Application.Mapping.Users;
@@ -11,10 +12,16 @@ public class UserProfile : Profile
     public UserProfile()
     {
         // User -> UserDto
-        CreateMap<User, UserDto>().ReverseMap();
+        CreateMap<User, UserDto>()
+            .ForMember(d => d.File, o => o.MapFrom(s => s.ImageStoredFile))
+            .ReverseMap();
+
+        CreateMap<UserUpdateDto, User>()
+            .IgnoreNullValuesForPatch();
 
         // User -> CurrentUserDto
         CreateMap<User, UserAccountDto>()
+            .IncludeBase<User, UserDto>()
             .ForMember(dest => dest.AuthProviderId, opt => opt.Ignore())
             .ForMember(dest => dest.Roles, opt => opt.MapFrom(src => src.UserRoles.Select(ur => ur.Role)));
 
@@ -26,6 +33,7 @@ public class UserProfile : Profile
 
         // User -> CurrentUserDto
         CreateMap<User, CurrentUserDto>()
+            .IncludeBase<User, UserDto>()
             .ForMember(dest => dest.Roles, opt => opt.MapFrom(src => src.UserRoles.Select(ur => ur.Role)));
 
         // Map Role -> RoleNameDto (only the Name field)

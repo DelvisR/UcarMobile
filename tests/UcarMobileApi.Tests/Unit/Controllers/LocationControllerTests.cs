@@ -79,7 +79,7 @@ namespace UcarMobileApi.Tests.Unit.Controllers
         {
             var controller = CreateController(out var mock);
             mock.Setup(x => x.GetPlaceLocationAsync("place_1", CancellationToken.None))
-                .ReturnsAsync(new LocationDto(10.5, -20.3, string.Empty));
+                .ReturnsAsync(new LocationDto(10.5, -20.3, string.Empty, "America/Chicago"));
 
             var result = await controller.GetPlaceLocation("place_1", CancellationToken.None);
             var ok = result as OkObjectResult;
@@ -107,7 +107,7 @@ namespace UcarMobileApi.Tests.Unit.Controllers
         {
             var controller = CreateController(out var mock);
             mock.Setup(x => x.GetCoordinatesFromAddressAsync("123 Av.", CancellationToken.None))
-                .ReturnsAsync(new LocationDto(1.234, -5.678, string.Empty));
+                .ReturnsAsync(new LocationDto(1.234, -5.678, string.Empty, "America/Chicago"));
 
             var result = await controller.GetCoordinatesFromAddress("123 Av.", CancellationToken.None);
             var ok = result as OkObjectResult;

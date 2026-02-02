@@ -23,17 +23,22 @@ public class UploadPresignRequest
 {
     public string FileName { get; set; } = null!;
     public string ContentType { get; set; } = "application/octet-stream";
-    public long? ContentLength { get; set; }
     public string? Prefix { get; set; }
     public int? ExpiresMinutes { get; set; }
+}
+
+public class UploadPresignResponse
+{
+    public string Key { get; set; } = null!;
+    public string UploadUrl { get; set; } = string.Empty;
 }
 
 /// <summary>
 /// Request payload to notify the API after client finished uploading to S3.
 /// </summary>
-public class NotifyUploadRequest
+public class FileUploadCompleteDto
 {
     public string Key { get; set; } = null!;
-    public string? FileName { get; set; }
+    public string? OriginalFileName { get; set; }
     public string? ContentType { get; set; }
 }

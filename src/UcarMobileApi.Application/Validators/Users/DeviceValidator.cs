@@ -8,8 +8,6 @@ public class DeviceValidator : AbstractValidator<RegisterDeviceDto>
 {
     public DeviceValidator()
     {
-        RuleFor(d => d.UserId).GreaterThan(0).WithMessage(ValidatorErrors.GreaterThanZero);
-
         RuleFor(d => d.Token).NotEmpty().WithMessage(ValidatorErrors.IsRequired)
             .MaximumLength(500).WithMessage(string.Format(ValidatorErrors.MaxLengthExceeded, 500));
 

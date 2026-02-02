@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UcarMobileApi.Core.Entities.Common;
 
 namespace UcarMobileApi.Core.Entities.Appointments;
@@ -9,10 +10,12 @@ public class AppointmentNote : EntityBase
 
     public string Content { get; set; } = string.Empty;
 
-    public NoteSource Source { get; set; }
+    public ContentSource Source { get; set; } = ContentSource.Client;
+
+    public ICollection<AppointmentNoteDocument> Documents { get; set; } = [];
 }
 
-public enum NoteSource : byte
+public enum ContentSource : byte
 {
     Client = 1,
     Technician,

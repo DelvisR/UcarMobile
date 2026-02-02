@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
-using UcarMobileApi.Application.Common.Interfaces;
 using UcarMobileApi.Application.DTOs.Files;
+using UcarMobileApi.Application.Services.StoredFiles;
 using UcarMobileApi.Authorization;
 using UcarMobileApi.Core.Entities.Storage;
 
@@ -12,7 +12,7 @@ namespace UcarMobileApi.Controllers.Files;
 [ApiController]
 [Route("api/files")]
 [Produces("application/json")]
-public class FilesController(IFileStorageService storageService) : ControllerBase
+public class FilesController(StoredFileService storedFile) : ControllerBase
 {
     /// <summary>
     /// Uploads a file to the server (streamed) and persists metadata in the database.
@@ -34,7 +34,7 @@ public class FilesController(IFileStorageService storageService) : ControllerBas
 
         await using var stream = request.File.OpenReadStream();
 
-        var stored = await storageService.UploadAsync(
+        var stored = await storedFile.UploadAndSaveAsync(
             stream,
             request.File.FileName,
             request.File.ContentType,
@@ -57,9 +57,9 @@ public class FilesController(IFileStorageService storageService) : ControllerBas
     [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<string>> PresignUpload([FromBody] UploadPresignRequest request)
+    public ActionResult<UploadPresignResponse> PresignUpload([FromBody] UploadPresignRequest request)
     {
-        var resp = await storageService.GenerateUploadPresignedUrl(request);
+        var resp = storedFile.GenerateUploadPresignedUrl(request);
         return Ok(resp);
     }
 
@@ -67,7 +67,7 @@ public class FilesController(IFileStorageService storageService) : ControllerBas
     /// Notifies the API that a file was uploaded directly using a presigned URL, and persists its metadata.
     /// Requires 'ACTION_UPLOAD_FILE' action.
     /// </summary>
-    /// <param name="request">Notification data with file key, name, content type, etc.</param>
+    /// <param name="completeDto">Notification data with file key, name, content type, etc.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>Stored file metadata.</returns>
     [HttpPost("notify")]
@@ -75,9 +75,9 @@ public class FilesController(IFileStorageService storageService) : ControllerBas
     [ProducesResponseType(typeof(StoredFile), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<StoredFile>> Notify([FromBody] NotifyUploadRequest request, CancellationToken ct)
+    public async Task<ActionResult<StoredFile>> Notify([FromBody] FileUploadCompleteDto completeDto, CancellationToken ct)
     {
-        var stored = await storageService.NotifyUploadAsync(request, ct);
+        var stored = await storedFile.RegisterUploadedFileAsync(completeDto, ct);
 
         // Return CreatedAtAction so client can easily follow to a download presign
         return CreatedAtAction(nameof(PresignDownloadById), new { id = stored.Id }, stored);
@@ -101,7 +101,7 @@ public class FilesController(IFileStorageService storageService) : ControllerBas
         if (id <= 0)
             return BadRequest("Invalid file ID.");
 
-        var resp = await storageService.GenerateDownloadPresignedUrlByIdAsync(id, expiresMinutes, ct);
+        var resp = await storedFile.GenerateDownloadPresignedUrlByIdAsync(id, expiresMinutes, ct);
 
         return Ok(resp);
     }
@@ -123,7 +123,7 @@ public class FilesController(IFileStorageService storageService) : ControllerBas
         if (id <= 0)
             return BadRequest("Invalid file ID.");
 
-        var deleted = await storageService.DeleteAsync(id, ct);
+        var deleted = await storedFile.DeleteAsync(id, ct);
 
         if (!deleted)
             return NotFound();

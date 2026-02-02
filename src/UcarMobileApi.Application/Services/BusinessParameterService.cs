@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -22,7 +23,9 @@ public class BusinessParameterService(IMapper mapper, IAppDbContext context, ICa
         var cached = await cache.GetAsync<List<BusinessParameterDto>>(CacheKey);
         if (cached is not null) return cached;
 
-        var list = await context.Set<BusinessParameter>().AsNoTracking()
+        var list = await context.Set<BusinessParameter>()
+            .AsNoTracking()
+            .OrderBy(p => p.Order)
             .ProjectTo<BusinessParameterDto>(mapper.ConfigurationProvider)
             .ToListAsync(cancellationToken);
 
@@ -42,6 +45,9 @@ public class BusinessParameterService(IMapper mapper, IAppDbContext context, ICa
         var parameter = await context.Set<BusinessParameter>().FirstOrDefaultAsync(p => p.Key == key, cancellationToken)
                         ?? throw new KeyNotFoundException($"Parameter '{key}' not found.");
 
+        // Validate type with value
+        ConvertToType(parameter.ValueType, value);
+
         parameter.Value = value;
 
         await context.SaveChangesAsync(cancellationToken);
@@ -50,7 +56,7 @@ public class BusinessParameterService(IMapper mapper, IAppDbContext context, ICa
     }
 
 
-    public async Task<T?> GetValueAsync<T>(string key, CancellationToken cancellationToken = default)
+    public async Task<T?> GetValueAsync<T>(string key, CancellationToken cancellationToken = default, T? defaultValue = default)
     {
         if (string.IsNullOrWhiteSpace(key))
             throw new ArgumentException("Key cannot be empty.", nameof(key));
@@ -61,7 +67,7 @@ public class BusinessParameterService(IMapper mapper, IAppDbContext context, ICa
         var parameter = list.FirstOrDefault(p => p.Key == key)
                         ?? throw new KeyNotFoundException($"Parameter '{key}' not found.");
 
-        if (string.IsNullOrWhiteSpace(parameter.Value)) return default;
+        if (string.IsNullOrWhiteSpace(parameter.Value)) return defaultValue;
 
         try
         {
@@ -73,5 +79,36 @@ public class BusinessParameterService(IMapper mapper, IAppDbContext context, ICa
         }
     }
 
+    public async Task<object?> GetValueAsync(string key, CancellationToken cancellationToken = default)
+    {
+        var list = await GetAllAsync(cancellationToken);
 
+        var parameter = list.FirstOrDefault(p => p.Key == key)
+                        ?? throw new KeyNotFoundException($"Parameter '{key}' not found.");
+
+        return ConvertToType(parameter.ValueType, parameter.Value);
+    }
+
+    private static object? ConvertToType(string valueType, string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return null;
+
+        if (!BusinessParameterTypes.Map.TryGetValue(valueType, out var targetType))
+            throw new NotSupportedException($"ValueType '{valueType}' is not supported.");
+
+        try
+        {
+            var converter = TypeDescriptor.GetConverter(targetType);
+
+            if (!converter.CanConvertFrom(typeof(string)))
+                throw new InvalidCastException($"Cannot convert from string to '{targetType.Name}'.");
+
+            return converter.ConvertFromInvariantString(value);
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidCastException($"Value '{value}' is not valid for type '{valueType}'.", ex);
+        }
+    }
 }

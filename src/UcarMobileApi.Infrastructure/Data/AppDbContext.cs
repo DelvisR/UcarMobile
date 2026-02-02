@@ -1,16 +1,11 @@
-using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using UcarMobileApi.Application.Common.Interfaces;
 using UcarMobileApi.Infrastructure.Configurations.EntityTypeConfigurations;
-using UcarMobileApi.Infrastructure.Interceptors;
 
 namespace UcarMobileApi.Infrastructure.Data;
 
-public class AppDbContext(DbContextOptions<AppDbContext> options, IHttpContextAccessor httpContextAccessor) : DbContext(options), IAppDbContext
+public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options), IAppDbContext
 {
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        => optionsBuilder.AddInterceptors(new AuditInterceptor(httpContextAccessor));
-
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         // Tell Entity Framework Core that your PostgreSQL database uses the PostGIS extension.
@@ -24,5 +19,4 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, IHttpContextAc
 
         base.OnModelCreating(modelBuilder);
     }
-
 }

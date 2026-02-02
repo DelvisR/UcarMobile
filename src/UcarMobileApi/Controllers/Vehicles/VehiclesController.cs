@@ -13,6 +13,8 @@ namespace UcarMobileApi.Controllers.Vehicles;
 [AllowAnonymous]
 public class VehiclesController(VehicleService vehicleService) : ControllerBase
 {
+
+
     /// <summary>
     /// Gets the list of available vehicle years.
     /// </summary>

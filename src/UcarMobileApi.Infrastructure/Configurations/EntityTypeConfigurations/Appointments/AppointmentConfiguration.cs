@@ -19,6 +19,10 @@ public class AppointmentConfiguration : IEntityTypeConfiguration<Appointment>
             .HasColumnType("decimal(18,2)")
             .IsRequired();
 
+        builder.Property(a => a.Tax)
+            .HasColumnType("decimal(10,2)")
+            .IsRequired();
+
         builder.Property(a => a.PaymentStatus)
             .IsRequired()
             .HasConversion<byte>();
@@ -30,10 +34,18 @@ public class AppointmentConfiguration : IEntityTypeConfiguration<Appointment>
         builder.Property(a => a.ScheduledStart)
             .IsRequired();
 
+        builder.Property(c => c.CancellationReason).HasMaxLength(250);
+
         // Relationships
         builder.HasOne(a => a.Client)
             .WithMany(c => c.Appointments)
             .HasForeignKey(a => a.ClientId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Relationship: Payment → PaymentMethod (many-to-one)
+        builder.HasOne(x => x.PaymentMethod)
+            .WithMany(c => c.Appointments) // ensure PaymentMethod entity has ICollection<Appointment> Appointment
+            .HasForeignKey(x => x.PaymentMethodId)
             .OnDelete(DeleteBehavior.Restrict);
 
         // NOTE: The relationship with Payments is configured in PaymentConfiguration.cs

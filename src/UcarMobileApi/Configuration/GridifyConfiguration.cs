@@ -1,4 +1,6 @@
 using Gridify;
+using UcarMobileApi.Application.Common.Interfaces;
+using UcarMobileApi.Infrastructure.Configurations.Gridify;
 using UcarMobileApi.Infrastructure.Configurations.Gridify.Mappers;
 using UcarMobileApi.Infrastructure.Configurations.Gridify.Operators;
 
@@ -30,6 +32,9 @@ public static class GridifyConfiguration
         // Register Gridify mappers from the specified assembly
         // Gridify mappers allow creating virtual columns and custom property mappings
         services.AddGridifyMappers(typeof(GridifyMapperAssemblyMarker).Assembly);
+        // Register the Gridify mapper resolver for resolving mappers at runtime
+        services.AddScoped<IGridifyMapperResolver, GridifyMapperResolver>();
+
 
         return services;
     }

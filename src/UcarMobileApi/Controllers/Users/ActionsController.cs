@@ -22,7 +22,7 @@ public class ActionsController(ActionService actionService) : ControllerBase
     /// </summary>
     /// <response code="200">Returns the list of roles.</response>
     /// <response code="401">User not authorized.</response>
-    /// <response code="403">User does not have action.</response>
+    /// <response code="403">User does not have permission for this action.</response>
     [HttpGet]
     [RequireAction("ACTION_MANAGE_ROLE_RESOURCE_AND_ACTIONS")]
     public async Task<ActionResult<IEnumerable<ActionDto>>> GetAll([FromQuery] QueryFilter query, CancellationToken ct)

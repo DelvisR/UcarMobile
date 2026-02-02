@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using UcarMobileApi.Infrastructure.Data;
 
@@ -11,7 +10,6 @@ public static class TestDbContextFactory
         var options = new DbContextOptionsBuilder<AppDbContext>()
             .UseInMemoryDatabase(dbName)
             .Options;
-        var http = new HttpContextAccessor();
-        return new AppDbContext(options, http);
+        return new AppDbContext(options);
     }
 }

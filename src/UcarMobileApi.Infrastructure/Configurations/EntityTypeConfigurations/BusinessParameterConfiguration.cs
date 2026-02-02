@@ -18,6 +18,10 @@ public class BusinessParameterConfiguration : IEntityTypeConfiguration<BusinessP
             .HasMaxLength(255)
             .IsRequired();
 
+        builder.Property(x => x.Category)
+            .HasMaxLength(50)
+            .IsRequired();
+
         builder.Property(x => x.ValueType)
             .HasMaxLength(20)
             .IsRequired();

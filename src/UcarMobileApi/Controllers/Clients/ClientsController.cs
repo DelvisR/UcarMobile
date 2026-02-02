@@ -17,7 +17,7 @@ namespace UcarMobileApi.Controllers.Clients;
 public class ClientsController(ClientService clientService) : ControllerBase
 {
     /// <summary>
-    /// Gets all clients.
+    /// Get all clients.
     /// Requires 'ACTION_VIEW_MAIN_MENU_CLIENTS' action.
     /// </summary>
     [HttpGet]
@@ -30,7 +30,7 @@ public class ClientsController(ClientService clientService) : ControllerBase
     }
 
     /// <summary>
-    /// Gets a specific client by ID.
+    /// Get a specific client by ID.
     /// Requires 'ACTION_VIEW_MAIN_MENU_CLIENTS' action.
     /// </summary>
     [HttpGet("{id:int}")]
@@ -54,25 +54,25 @@ public class ClientsController(ClientService clientService) : ControllerBase
 
 
     /// <summary>
-    /// Creates a new client.
+    /// Create a new client.
     /// </summary>
     [HttpPost]
     [AllowAnonymous]
     [ProducesResponseType(StatusCodes.Status201Created)]
-    public async Task<IActionResult> CreateClient(ClientDto clientDto, CancellationToken ct)
+    public async Task<IActionResult> CreateClient([FromBody] ClientDto clientDto, CancellationToken ct)
     {
         await clientService.CreateClientAsync(clientDto, ct);
         return Created();
     }
 
     /// <summary>
-    /// Updates an existing client.
+    /// Update an existing client.
     /// Requires 'ACTION_EDIT_CLIENT' action.
     /// </summary>
     [HttpPut("{id:int}")]
     [RequireAction("ACTION_EDIT_CLIENT")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public async Task<IActionResult> UpdateClient(int id, ClientDto dto, CancellationToken ct)
+    public async Task<IActionResult> UpdateClient(int id, [FromBody] ClientDto dto, CancellationToken ct)
     {
         if (id != dto.Id) return BadRequest("Id in route and payload do not match.");
 

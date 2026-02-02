@@ -6,6 +6,8 @@ using Amazon.SQS;
 using UcarMobileApi.Application.Common.Interfaces;
 using UcarMobileApi.Infrastructure.Configurations.Settings;
 using UcarMobileApi.Infrastructure.Providers;
+using UcarMobileApi.Infrastructure.Reports;
+using UcarMobileApi.Infrastructure.Services;
 using UcarMobileApi.Infrastructure.Services.Location;
 using UcarMobileApi.Infrastructure.Services.Notifications;
 using UcarMobileApi.Infrastructure.Services.Payments;
@@ -27,6 +29,9 @@ public static class InfrastructureConfiguration
     /// <returns>The updated service collection.</returns>
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, AwsSettings awsSettings)
     {
+        // Register the IHttpContextAccessor service in the dependency container.
+        services.AddHttpContextAccessor();
+
         #region AWS Notification
 
         // Determine effective AWS region
@@ -99,7 +104,13 @@ public static class InfrastructureConfiguration
         #region Storage
 
         // Register File Storage service (S3 implementation)
-        services.AddScoped<IFileStorageService, S3FileStorageService>();
+        services.AddScoped<IStorageService, S3StorageService>();
+
+        #endregion
+
+        #region Report
+
+        services.AddScoped<IReportService, FastReportService>();
 
         #endregion
 

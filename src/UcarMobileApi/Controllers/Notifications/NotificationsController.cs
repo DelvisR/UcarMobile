@@ -40,6 +40,29 @@ public class NotificationsController(NotificationQueuePublisher publisher, ILogg
     }
 
     /// <summary>
+    /// Enqueue an template email notification for asynchronous delivery.
+    /// Requires 'ACTION_SEND_NOTIFICATION' action.
+    /// <response code="202">Returns Accepted.</response>
+    /// </summary>
+    [HttpPost("templateEmail")]
+    [RequireAction("ACTION_SEND_NOTIFICATION")]
+    [ProducesResponseType(StatusCodes.Status202Accepted)]
+    public async Task<IActionResult> SendTemplateEmail([FromBody] TemplateEmailMessage request, CancellationToken ct)
+    {
+        var message = new NotificationMessage
+        {
+            Type = NotificationType.TemplateEmail,
+            TemplateEmail = request
+        };
+
+        await publisher.PublishAsync(message, ct);
+
+        logger.LogInformation("Template email notification enqueued for {To}", request.To);
+
+        return Accepted(new { status = "enqueued", type = "templateEmail", to = request.To });
+    }
+
+    /// <summary>
     /// Enqueue an SMS notification for asynchronous delivery.
     /// Requires 'ACTION_SEND_NOTIFICATION' action.
     /// <response code="202">Returns Accepted.</response>

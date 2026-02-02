@@ -1,6 +1,4 @@
 using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using UcarMobileApi.Application.Common.Interfaces;
@@ -9,6 +7,48 @@ using UcarMobileApi.Application.Validators.Common;
 using UcarMobileApi.Core.Entities.Users;
 
 namespace UcarMobileApi.Application.Validators.Users;
+
+public static class UserValidationRules
+{
+    public static IRuleBuilderOptions<T, string?> EmailRules<T>(this IRuleBuilder<T, string?> ruleBuilder, IAppDbContext dbContext) where T : UserBaseDto
+    {
+        return ruleBuilder
+            .MaximumLength(256).WithMessage(string.Format(ValidatorErrors.MaxLengthExceeded, 256))
+            .EmailAddress().WithMessage(ValidatorErrors.InvalidValue)
+            .MustAsync(async (dto, email, ct) =>
+            {
+                if (string.IsNullOrWhiteSpace(email))
+                    return true;
+
+                return !await dbContext.Set<User>()
+                    .AsNoTracking()
+                    .AnyAsync(u => u.Email == email && u.Id != dto.Id, ct);
+            })
+            .WithMessage(ValidatorErrors.Duplicated);
+    }
+
+    public static IRuleBuilderOptions<T, string?> PhoneRules<T>(this IRuleBuilder<T, string?> ruleBuilder)
+    {
+        return ruleBuilder
+            .Matches(@"^\d{10}$")
+            .WithMessage("Phone must be exactly 10 digits");
+    }
+
+    public static IRuleBuilderOptions<T, string?> NameRules<T>(this IRuleBuilder<T, string?> ruleBuilder, int maxLength)
+    {
+        return ruleBuilder
+            .MaximumLength(maxLength)
+            .WithMessage(string.Format(ValidatorErrors.MaxLengthExceeded, maxLength));
+    }
+
+    public static IRuleBuilderOptions<T, string?> LangKeyRules<T>(this IRuleBuilder<T, string?> ruleBuilder)
+        where T : UserBaseDto
+    {
+        return ruleBuilder
+            .Must(lang => string.IsNullOrWhiteSpace(lang) || lang == "es" || lang == "en")
+            .WithMessage("LangKey must be 'es' or 'en'");
+    }
+}
 
 public class UserValidator<TUser> : AbstractValidator<TUser> where TUser : UserDto
 {
@@ -24,28 +64,48 @@ public class UserValidator<TUser> : AbstractValidator<TUser> where TUser : UserD
 
         RuleFor(x => x.Email)
             .NotEmpty().WithMessage(ValidatorErrors.IsRequired)
-            .MaximumLength(256).WithMessage(string.Format(ValidatorErrors.MaxLengthExceeded, 256))
-            .EmailAddress()
-            .MustAsync(BeUniqueEmail).WithMessage(ValidatorErrors.Duplicated);
+            .EmailRules(dbContext);
 
-        RuleFor(u => u.Phone)
+        RuleFor(x => x.Phone)
             .NotEmpty().WithMessage(ValidatorErrors.IsRequired)
-            .Matches(@"^\d{10}$").WithMessage("Phone must be exactly 10 digits");
+            .PhoneRules();
 
         RuleFor(x => x.FirstName)
             .NotEmpty().WithMessage(ValidatorErrors.IsRequired)
-            .MaximumLength(50).WithMessage(string.Format(ValidatorErrors.MaxLengthExceeded, 50));
+            .NameRules(50);
 
         RuleFor(x => x.LastName)
             .NotEmpty().WithMessage(ValidatorErrors.IsRequired)
-            .MaximumLength(50).WithMessage(string.Format(ValidatorErrors.MaxLengthExceeded, 50));
-    }
+            .NameRules(50);
 
-    private async Task<bool> BeUniqueEmail(UserDto dto, string email, CancellationToken ct)
+        RuleFor(x => x.LangKey)
+            .LangKeyRules();
+    }
+}
+
+public class UserUpdateValidator<TUserUpdate> : AbstractValidator<TUserUpdate> where TUserUpdate : UserUpdateDto
+{
+    public UserUpdateValidator(IAppDbContext dbContext)
     {
-        return !await _dbContext.Set<User>()
-            .AsNoTracking()
-            .AnyAsync(u => u.Email == email && u.Id != dto.Id, ct);
+        RuleFor(x => x.Email)
+            .EmailRules(dbContext)
+            .When(x => !string.IsNullOrWhiteSpace(x.Email));
+
+        RuleFor(x => x.Phone)
+            .PhoneRules()
+            .When(x => !string.IsNullOrWhiteSpace(x.Phone));
+
+        RuleFor(x => x.FirstName)
+            .NameRules(50)
+            .When(x => !string.IsNullOrWhiteSpace(x.FirstName));
+
+        RuleFor(x => x.LastName)
+            .NameRules(50)
+            .When(x => !string.IsNullOrWhiteSpace(x.LastName));
+
+        RuleFor(x => x.LangKey)
+            .LangKeyRules()
+            .When(x => !string.IsNullOrWhiteSpace(x.LangKey));
     }
 }
 
@@ -54,8 +114,7 @@ public class UserValidator<TUser> : AbstractValidator<TUser> where TUser : UserD
 /// Includes role validation in addition to base user validation.
 /// </summary>
 /// <typeparam name="TUserAccount">Type that inherits from UserAccountDto</typeparam>
-public abstract class UserAccountValidator<TUserAccount> : UserValidator<TUserAccount>
-    where TUserAccount : UserAccountDto
+public abstract class UserAccountValidator<TUserAccount> : UserValidator<TUserAccount> where TUserAccount : UserAccountDto
 {
     protected UserAccountValidator(IAppDbContext dbContext) : base(dbContext)
     {

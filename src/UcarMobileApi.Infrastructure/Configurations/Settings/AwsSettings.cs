@@ -49,6 +49,9 @@ public class AwsSecretsOptions
 
     /// <summary>Name or ARN of the Google API key secret.</summary>
     public string? GoogleApiKeySecretId { get; set; }
+
+    /// <summary>Name or ARN of the AutoZone secret.</summary>
+    public string? AutoZoneSecrets { get; set; }
 }
 
 /// <summary>Cognito settings (User Pool, Client ID, etc.).</summary>

@@ -8,12 +8,12 @@ public class DeviceConfiguration : IEntityTypeConfiguration<Device>
 {
     public void Configure(EntityTypeBuilder<Device> builder)
     {
-        builder.ToTable("Device").HasOne(d => d.User)
-            .WithMany()
+        builder.HasOne(d => d.User)
+            .WithMany(u => u.Devices)
             .HasForeignKey(d => d.UserId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        builder.HasIndex(x => new { x.UserId, x.Token }).IsUnique();
+        builder.HasIndex(x => new { x.UserId, x.Token, x.Platform }).IsUnique();
 
         builder.Property(d => d.UserId).IsRequired();
         builder.Property(d => d.Token).IsRequired().HasMaxLength(500);

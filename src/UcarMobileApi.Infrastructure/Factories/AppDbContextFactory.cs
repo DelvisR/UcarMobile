@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration;
@@ -39,7 +38,7 @@ public class AppDbContextFactory : IDesignTimeDbContextFactory<AppDbContext>
         var optionsBuilder = new DbContextOptionsBuilder<AppDbContext>();
         optionsBuilder.UseNpgsql(connectionString, o => o.UseNetTopologySuite());
 
-        // Return a new AppDbContext instance with default HttpContextAccessor
-        return new AppDbContext(optionsBuilder.Options, new HttpContextAccessor());
+        // Return a new AppDbContext instance
+        return new AppDbContext(optionsBuilder.Options);
     }
 }

@@ -1,5 +1,6 @@
 using FluentValidation;
 using UcarMobileApi.Application;
+using UcarMobileApi.Application.Validators.Common;
 
 namespace UcarMobileApi.Configuration;
 
@@ -19,6 +20,8 @@ public static class FluentValidationConfiguration
     public static IServiceCollection AddFluentValidationConfig(this IServiceCollection services)
     {
         services.AddValidatorsFromAssembly(typeof(ApplicationAssemblyMarker).Assembly);
+        // register the validator resolver
+        services.AddScoped<IValidatorResolver, FluentValidatorFactory>();
         return services;
     }
 }

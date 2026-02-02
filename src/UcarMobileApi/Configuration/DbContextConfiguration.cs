@@ -3,6 +3,7 @@ using Serilog;
 using UcarMobileApi.Application.Common.Interfaces;
 using UcarMobileApi.Infrastructure.Data;
 using UcarMobileApi.Infrastructure.Factories;
+using UcarMobileApi.Infrastructure.Interceptors;
 
 namespace UcarMobileApi.Configuration;
 
@@ -18,6 +19,8 @@ public static class DbContextConfiguration
     /// </summary>
     public static IServiceCollection AddAppDbContext(this IServiceCollection services, IWebHostEnvironment env)
     {
+        services.AddScoped<PersistenceInterceptor>();
+
         services.AddDbContext<AppDbContext>((serviceProvider, options) =>
         {
             var factory = serviceProvider.GetRequiredService<IDbConnectionFactory>();
@@ -26,6 +29,8 @@ public static class DbContextConfiguration
             options.UseNpgsql(connectionString, o => o
                 .UseNetTopologySuite()
                 .UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery));
+
+            options.AddInterceptors(serviceProvider.GetRequiredService<PersistenceInterceptor>());
 
             if (env.IsDevelopment())
             {

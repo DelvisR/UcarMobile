@@ -23,6 +23,11 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(x => x.LangKey).HasMaxLength(6).HasDefaultValue("en");
         builder.Property(u => u.IsActive).IsRequired().HasDefaultValue(false);
 
+        builder.HasOne(u => u.ImageStoredFile)
+            .WithOne() // StoredFile does not have reverse navigation
+            .HasForeignKey<User>(u => u.ImageStoredFileId)
+            .OnDelete(DeleteBehavior.Restrict); // avoid cascades
+
         builder.HasIndex(r => r.IsActive);
     }
 }

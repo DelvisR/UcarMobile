@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using UcarMobileApi.Application.Attributes;
 using UcarMobileApi.Application.DTOs.Common;
 using UcarMobileApi.Application.DTOs.Services;
 using UcarMobileApi.Application.DTOs.Users;
@@ -30,10 +31,19 @@ public class TechnicianDto : UserAccountDto
     public List<TechnicianSpecialityDto> Specialities { get; set; } = [];
 
     // Display name returned by the provider (optional).
+    [SwaggerIgnore]
     public string? ProviderDisplayName { get; set; }
 
     // Indicates whether provider payments/payouts are enabled for this technician.
+    [SwaggerIgnore]
     public bool ProviderPaymentsEnabled { get; set; }
+}
+
+public class TechnicianBasicDto : UserDto;
+
+public class TechnicianUpdateDto : UserUpdateDto
+{
+    public AddressInfoDto? BaseAddress { get; set; }
 }
 
 /// <summary>

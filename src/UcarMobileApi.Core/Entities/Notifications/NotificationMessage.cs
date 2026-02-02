@@ -13,6 +13,9 @@ public class NotificationMessage
     public EmailMessage? Email { get; set; }
 
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public TemplateEmailMessage? TemplateEmail { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public SmsMessage? Sms { get; set; }
 
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]

@@ -9,6 +9,15 @@ public class AppointmentDocument : AuditableEntity
     public Appointment Appointment { get; set; } = null!;
     public int StoredFileId { get; set; }
     public StoredFile StoredFile { get; set; } = null!;
-    public int? AppointmentNoteId { get; set; } // The document may belong to a note
-    public AppointmentNote? AppointmentNote { get; set; }
+    public ContentSource Source { get; set; } = ContentSource.Technician;
 }
+
+public class AppointmentNoteDocument : AuditableEntity
+{
+    public int AppointmentNoteId { get; set; }
+    public AppointmentNote AppointmentNote { get; set; } = null!;
+
+    public int StoredFileId { get; set; }
+    public StoredFile StoredFile { get; set; } = null!;
+}
+

@@ -16,6 +16,7 @@ public class AppointmentVehicle : EntityBase
     public int VehicleId { get; set; }
     public ClientVehicle Vehicle { get; set; } = null!;
 
-    public ICollection<AppointmentService>? Services { get; set; } = [];
-    public ICollection<AppointmentPart> Parts { get; set; } = [];
+    public int OdometerKm { get; set; }
+
+    public ICollection<AppointmentService> Services { get; set; } = [];
 }

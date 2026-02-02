@@ -13,7 +13,8 @@ public class AddressInfoValidator : AbstractValidator<AddressInfoDto>
 
         RuleFor(x => x.ZipCode)
             .NotEmpty().WithMessage(ValidatorErrors.IsRequired)
-            .MaximumLength(10).WithMessage(string.Format(ValidatorErrors.MaxLengthExceeded, 10));
+            .Matches(@"^\d{5}(-\d{4})?$")
+            .WithMessage("ZipCode must be in '12345' or '12345-6789' format");
 
         RuleFor(x => x.Lat)
             .InclusiveBetween(-90, 90).WithMessage("Latitude must be between -90 and 90 degrees.");

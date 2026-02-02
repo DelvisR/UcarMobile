@@ -11,7 +11,7 @@ namespace UcarMobileApi.Controllers.Users;
 [ApiController]
 [Route("api/auth")]
 [Tags("User Authorization")]
-public class UserAuthorizationController(IUserAuthorizationService authService, CurrentUserService currentUser) : ControllerBase
+public class UserAuthorizationController(IUserAuthorizationService authService, UserService userService, CurrentUserService currentUser) : ControllerBase
 {
     /// <summary>
     /// Checks whether the current user has a specific action.
@@ -97,5 +97,52 @@ public class UserAuthorizationController(IUserAuthorizationService authService, 
     {
         var user = await authService.GetUserByAuthProviderIdAsync(currentUser.AuthProviderId, ct);
         return user is null ? NotFound() : Ok(user);
+    }
+
+    /// <summary>
+    /// Uploads a profile image for the current user.
+    /// If an image already exists, it is replaced.
+    /// </summary>
+    /// <param name="image">
+    /// The image file to upload. Supported formats: JPG, PNG, WEBP.
+    /// The maximum allowed size is 2 MB.
+    /// </param>
+    /// <param name="ct">
+    /// A cancellation token to cancel the operation.
+    /// </param>
+    /// <returns>
+    /// Returns <see cref="StatusCodes.Status204NoContent"/> when the image is successfully
+    /// created or replaced.
+    /// </returns>
+    [HttpPut("image")]
+    [Consumes("multipart/form-data")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> UpsertUserImage(IFormFile image, CancellationToken ct)
+    {
+        var userId = await authService.GetUserIdAsync(currentUser.AuthProviderId, ct) ?? 0;
+        await userService.UpsertUserImageAsync(userId, image, ct);
+        return NoContent();
+    }
+
+    /// <summary>
+    /// Deletes the profile image of the current user.
+    /// </summary>
+    /// <param name="ct">
+    /// A cancellation token to cancel the operation.
+    /// </param>
+    /// <returns>
+    /// Returns <see cref="StatusCodes.Status204NoContent"/> when the image is successfully deleted,
+    /// or when the user does not have a profile image.
+    /// </returns>
+    [HttpDelete("image")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeleteUserImage(CancellationToken ct)
+    {
+        var userId = await authService.GetUserIdAsync(currentUser.AuthProviderId, ct) ?? 0;
+        await userService.DeleteUserImageAsync(userId, ct);
+        return NoContent();
     }
 }

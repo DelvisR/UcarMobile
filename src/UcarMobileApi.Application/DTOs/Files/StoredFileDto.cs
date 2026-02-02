@@ -1,3 +1,5 @@
+using Newtonsoft.Json;
+
 namespace UcarMobileApi.Application.DTOs.Files;
 
 /// <summary>
@@ -9,6 +11,11 @@ public class StoredFileDto
     public string FileName { get; set; } = string.Empty;
     public string ContentType { get; set; } = string.Empty;
     public long Size { get; set; }
+
+    [JsonIgnore]
+    public string? Key { get; set; } // only for internal use
+    [JsonIgnore]
+    public string? Bucket { get; set; } // only for internal use
 
     /// <summary>
     /// Temporary URL for downloading the file from S3 (presigned, expires soon).

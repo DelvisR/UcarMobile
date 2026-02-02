@@ -1,0 +1,140 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Report ScriptLanguage="CSharp" ReportInfo.Created="01/23/2026 12:41:21" ReportInfo.Modified="01/28/2026 17:31:40" ReportInfo.CreatorVersion="2026.1.0.0">
+  <Dictionary>
+    <BusinessObjectDataSource Name="Appointment" ReferenceName="Appointment" DataType="System.Int32" Enabled="true">
+      <Column Name="Id" DataType="System.Int32"/>
+      <Column Name="ClientId" DataType="System.Int32"/>
+      <Column Name="ClientEmail" DataType="System.String"/>
+      <Column Name="ClientPhone" DataType="System.String"/>
+      <Column Name="ClientFullName" DataType="System.String"/>
+      <Column Name="ScheduledStart" Enabled="false" DataType="System.DateTime"/>
+      <Column Name="CompletedAt" Enabled="false" DataType="System.DateTime"/>
+      <Column Name="ServiceFullAddress" DataType="System.String"/>
+      <Column Name="ServiceAddressLat" Enabled="false" DataType="System.Double"/>
+      <Column Name="ServiceAddressLng" Enabled="false" DataType="System.Double"/>
+      <Column Name="EstimatedTotal" DataType="System.Decimal"/>
+      <Column Name="Tax" DataType="System.Decimal"/>
+      <Column Name="Discount" DataType="System.Decimal"/>
+      <Column Name="WarrantyMonths" DataType="System.Int32"/>
+      <Column Name="WarrantyMiless" Alias="WarrantyMiles" DataType="System.Int32"/>
+      <BusinessObjectDataSource Name="Vehicles" ReferenceName="Vehicles" DataType="System.Int32" Enabled="true">
+        <Column Name="OdometerKm" DataType="System.Int32"/>
+        <Column Name="VehicleName" DataType="System.String"/>
+        <Column Name="VehicleVIN" DataType="System.String"/>
+        <Column Name="VehicleLicense" DataType="System.String"/>
+        <Column Name="TechnicianId" DataType="System.Int32"/>
+        <Column Name="TechnicianName" DataType="System.String"/>
+        <BusinessObjectDataSource Name="Services" ReferenceName="Services" DataType="System.Int32" Enabled="true">
+          <Column Name="Id" Enabled="false" DataType="System.Int32"/>
+          <Column Name="ServiceId" Enabled="false" DataType="System.Int32"/>
+          <Column Name="ServiceCategory" Enabled="false" DataType="System.String"/>
+          <Column Name="ServiceName" DataType="System.String"/>
+          <Column Name="IsWarrantyApplicable" DataType="System.Boolean"/>
+          <Column Name="Price" DataType="System.Decimal"/>
+          <BusinessObjectDataSource Name="Parts" ReferenceName="Parts" DataType="System.Int32" Enabled="true">
+            <Column Name="Id" Enabled="false" DataType="System.Int32"/>
+            <Column Name="PartName" DataType="System.String"/>
+            <Column Name="PartNumber" Enabled="false" DataType="System.String"/>
+            <Column Name="Quantity" DataType="System.Int32"/>
+            <Column Name="UnitPrice" DataType="System.Decimal"/>
+            <Column Name="IsCustomerProvidedPart" DataType="System.Boolean"/>
+            <Column Name="Note" Enabled="false" DataType="System.String"/>
+            <Column Name="PartTotal" DataType="System.Decimal" PropName="Column" Calculated="true" Expression="Round([Appointment.Vehicles.Services.Parts.Quantity]*[Appointment.Vehicles.Services.Parts.UnitPrice])"/>
+          </BusinessObjectDataSource>
+        </BusinessObjectDataSource>
+        <Column Name="VehicleTotal" DataType="System.Decimal" PropName="Column" Calculated="true" Expression="[ServicesTotal]+[PartsTotal]"/>
+      </BusinessObjectDataSource>
+      <Column Name="Email" DataType="System.String" PropName="Column" Calculated="true" Expression="&quot;Email: &quot; + [CompanyEmail]"/>
+      <Column Name="Phone" DataType="System.String" PropName="Column" Calculated="true" Expression="&quot;Phone: &quot; + [CompanyPhone]"/>
+      <Column Name="ClientCell" DataType="System.Single" PropName="Column" Calculated="true" Expression="&quot;(&quot; + Substring([Appointment.ClientPhone],0,3) + &quot;) &quot; + Substring([Appointment.ClientPhone],3,3) + &quot;-&quot; + Substring([Appointment.ClientPhone],6)"/>
+      <Column Name="Warranty" DataType="System.String" PropName="Column" Calculated="true" Expression="[Appointment.WarrantyMonths] + &quot; MONTH/&quot; + Format(&quot;{0:#,000}&quot;,[Appointment.WarrantyMiles]) + &quot; MILE SERVICE WARRANTY&quot;"/>
+      <Column Name="WarrantyUntil" DataType="System.String" PropName="Column" Calculated="true" Expression="Format(&quot;{0:MMM dd, yyyy}&quot;, AddMonths([DateOfService],[Appointment.WarrantyMonths])) + &quot; or &quot; + IIf([VehiclesCount]==1,Format(&quot;{0:#,00}&quot;,[OdometerTotal]+[Appointment.WarrantyMiles]),&quot;Vehicle Odometer + &quot; + Format(&quot;{0:#,00}&quot;,[Appointment.WarrantyMiles])) + &quot; Miles&quot;"/>
+    </BusinessObjectDataSource>
+    <Parameter Name="CompanyName" DataType="System.String" AsString=""/>
+    <Parameter Name="CompanyAddress" DataType="System.String" AsString=""/>
+    <Parameter Name="CompanyPhone" DataType="System.String" AsString=""/>
+    <Parameter Name="CompanyEmail" DataType="System.String" AsString=""/>
+    <Parameter Name="CompanyWeb" DataType="System.String" AsString=""/>
+    <Parameter Name="DateOfService" DataType="System.DateTime" AsString=""/>
+    <Parameter Name="InvoiceNro" DataType="System.String" AsString=""/>
+    <Total Name="PartsTotal" Expression="[Appointment.Vehicles.Services.Parts.PartTotal]" Evaluator="Data3"/>
+    <Total Name="ServicesTotal" Expression="[Appointment.Vehicles.Services.Price]" Evaluator="Data2"/>
+    <Total Name="VehiclesCount" TotalType="Count" Evaluator="Data1"/>
+    <Total Name="OdometerTotal" Expression="[Appointment.Vehicles.OdometerKm]" Evaluator="Data1"/>
+  </Dictionary>
+  <ReportPage Name="Page1" PaperWidth="215.9" PaperHeight="279.4" RawPaperSize="1" Watermark.Font="Arial, 60pt">
+    <ReportTitleBand Name="ReportTitle1" Width="740.5" Height="213.68">
+      <ShapeObject Name="Shape1" Width="741.99" Height="11.34" Border.Color="Transparent" Fill.Color="18, 148, 95"/>
+      <TextObject Name="Text1" Left="-9450" Top="-9450" Width="94.5" Height="18.9" Text="0.264583" Font="Arial, 10pt"/>
+      <PictureObject Name="Picture1" Left="-12.45" Top="26.35" Width="207.25" Height="22" ImageFormat="Png" Image="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"/>
+      <TextObject Name="Text2" Left="11.45" Top="56.7" Width="330.75" Height="18.9" Text="[CompanyName]" Font="Arial Rounded MT Bold, 10pt, style=Bold"/>
+      <TextObject Name="Text3" Left="11.45" Top="75.6" Width="330.75" Height="18.9" Text="[CompanyAddress]" Font="Arial, 9.75pt"/>
+      <TextObject Name="Text4" Left="11.45" Top="95.5" Width="330.75" Height="18.9" Text="[CompanyWeb]" Font="Arial, 9.75pt"/>
+      <TextObject Name="Text6" Left="505.85" Top="22.8" Width="226.8" Height="28.35" Text="INVOICE #[InvoiceNro]" VertAlign="Center" Font="Arial Rounded MT Bold, 15.75pt"/>
+      <TextObject Name="Text7" Left="508.84" Top="56.7" Width="222.35" Height="18.9" Text="[DateOfService]" Format="Date" Format.Format="&quot;Date of service: &quot; MMM dd, yyyy" Font="Arial Rounded MT Bold, 9.75pt"/>
+      <TextObject Name="Text8" Left="508.83" Top="75.6" Width="222.35" Height="18.9" Text="[Appointment.Email]" Format="Custom" Format.Format="G" Font="Arial, 9.75pt"/>
+      <TextObject Name="Text9" Left="508.83" Top="95.48" Width="222.35" Height="18.9" Text="[Appointment.Phone]" Font="Arial, 9.75pt"/>
+      <TextObject Name="Text10" Left="11.45" Top="139.75" Width="481.95" Height="18.9" Text="CUSTOMER #[Appointment.ClientId]  -  [Appointment.ClientFullName]" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
+      <LineObject Name="Line1" Left="9.45" Top="134.3" Width="720.2" Border.Color="LightGray"/>
+      <TextObject Name="Text14" Left="509.75" Top="158.09" Width="222.34" Height="47.8" Text="[Appointment.ServiceFullAddress]" Font="Arial, 10pt"/>
+      <TextObject Name="Text15" Left="508.83" Top="139.73" Width="119.3" Height="18.9" Text="Service location:" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text17" Left="45.25" Top="163.08" Width="446.7" Height="18.9" Text="[Appointment.ClientCell]" VertAlign="Center" WordWrap="false" Font="Arial, 10pt" Trimming="EllipsisCharacter"/>
+      <TextObject Name="Text18" Left="11.45" Top="163.08" Width="38.35" Height="18.9" Text="Cell:" Format="Currency" Format.UseLocale="true" Format.DecimalDigits="2" VertAlign="Center" WordWrap="false" Font="Arial, 10pt, style=Bold" Trimming="EllipsisCharacter"/>
+      <TextObject Name="Text19" Left="56.62" Top="186.11" Width="436.25" Height="18.9" Text="[Appointment.ClientEmail]" VertAlign="Center" WordWrap="false" Font="Arial, 10pt" Trimming="EllipsisCharacter"/>
+      <TextObject Name="Text20" Left="11.45" Top="186.11" Width="50.35" Height="18.9" Text="Email:" Format="Currency" Format.UseLocale="true" Format.DecimalDigits="2" VertAlign="Center" WordWrap="false" Font="Arial, 10pt, style=Bold" Trimming="EllipsisCharacter"/>
+    </ReportTitleBand>
+    <DataBand Name="Data1" Top="217.68" Width="740.5" Height="97.83" DataSource="Vehicles">
+      <TextObject Name="Text12" Left="11.45" Top="39.8" Width="481.95" Height="18.9" Text="Technician: [Appointment.Vehicles.TechnicianName] (ID [Appointment.Vehicles.TechnicianId])" VertAlign="Center" Font="Arial, 10pt"/>
+      <LineObject Name="Line3" Left="9.45" Top="68.7" Width="720.2" Border.Color="LightGray"/>
+      <TextObject Name="Text22" Left="508.83" Top="29.8" Width="222.34" Height="18.9" Text="License: [Appointment.Vehicles.VehicleLicense]" Font="Arial, 10pt"/>
+      <TextObject Name="Text23" Left="9.45" Top="75.15" Width="151.2" Height="18.9" Text="SERVICES/LABOR" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text13" Left="614.25" Top="75.14" Width="113.4" Height="18.9" Text="Total" HorzAlign="Right" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text5" Left="9.45" Top="10.55" Width="72.6" Height="18.9" Text="VEHICLE:" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text11" Left="79.05" Top="10.55" Width="415.9" Height="18.9" Text="[Appointment.Vehicles.VehicleName]" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text21" Left="508.83" Top="10.55" Width="222.34" Height="18.9" Text="VIN: [Appointment.Vehicles.VehicleVIN]" Font="Arial, 10pt"/>
+      <LineObject Name="Line7" Left="10" Top="5.45" Width="720.2" Border.Color="LightGray"/>
+      <TextObject Name="Text46" Left="508.83" Top="49.7" Width="222.34" Height="18.9" Text="Odometer: [Appointment.Vehicles.OdometerKm]" Font="Arial, 10pt"/>
+      <DataBand Name="Data2" Top="319.51" Width="740.5" Height="64.26" DataSource="Services">
+        <TextObject Name="Text25" Left="9.45" Top="11.45" Width="412.35" Height="18.9" Text="[Appointment.Vehicles.Services.ServiceName]" Font="Arial, 10pt"/>
+        <TextObject Name="Text26" Left="614.25" Top="11.45" Width="113.4" Height="18.9" Text="[Appointment.Vehicles.Services.Price]" Format="Currency" Format.UseLocale="true" Format.DecimalDigits="2" HorzAlign="Right" WordWrap="false" Font="Arial, 10pt" Trimming="EllipsisCharacter"/>
+        <LineObject Name="Line5" Left="9.9" Top="33.35" Width="716.85" Border.Color="LightGray"/>
+        <TextObject Name="Text27" Left="18.9" Top="39.8" Width="151.2" Height="18.9" Text="Part/Material" Font="Arial, 10pt, style=Bold, Italic"/>
+        <TextObject Name="Text30" Left="430.25" Top="39.8" Width="66.15" Height="18.9" Text="Qty" HorzAlign="Right" Font="Arial, 10pt, style=Bold, Italic"/>
+        <TextObject Name="Text32" Left="506.85" Top="39.8" Width="94.5" Height="18.9" Text="Unit Price" HorzAlign="Right" Font="Arial, 10pt, style=Bold, Italic"/>
+        <TextObject Name="Text34" Left="614.25" Top="39.8" Width="113.4" Height="18.9" Text="Total" HorzAlign="Right" Font="Arial, 10pt, style=Bold, Italic"/>
+        <LineObject Name="Line6" Left="20.45" Top="61.7" Width="707.2" Border.Color="LightGray"/>
+        <LineObject Name="Line4" Left="9.45" Top="3" Width="720.2" Border.Color="LightGray"/>
+        <DataBand Name="Data3" Top="387.77" Width="740.5" Height="22.68" DataSource="Parts">
+          <TextObject Name="Text28" Left="18.9" Width="402.9" Height="18.9" Text="[Appointment.Vehicles.Services.Parts.PartName]" Font="Arial, 10pt"/>
+          <TextObject Name="Text29" Left="430.25" Width="66.15" Height="18.9" Text="[Appointment.Vehicles.Services.Parts.Quantity]" Format="Number" Format.UseLocale="true" Format.DecimalDigits="0" HorzAlign="Right" Font="Arial, 10pt"/>
+          <TextObject Name="Text31" Left="506.85" Width="94.5" Height="18.9" Text="[Appointment.Vehicles.Services.Parts.UnitPrice]" Format="Currency" Format.UseLocale="true" Format.DecimalDigits="2" HorzAlign="Right" WordWrap="false" Font="Arial, 10pt" Trimming="EllipsisCharacter"/>
+          <TextObject Name="Text33" Left="614.25" Width="113.4" Height="18.9" Text="[Appointment.Vehicles.Services.Parts.PartTotal]" Format="Currency" Format.UseLocale="true" Format.DecimalDigits="2" HorzAlign="Right" WordWrap="false" Font="Arial, 10pt" Trimming="EllipsisCharacter"/>
+        </DataBand>
+      </DataBand>
+      <DataFooterBand Name="DataFooter1" Top="414.45" Width="740.5" Height="37.8">
+        <TextObject Name="Text35" Left="614.25" Top="9.45" Width="113.4" Height="18.9" Text="[Appointment.Vehicles.VehicleTotal]" Format="Currency" Format.UseLocale="true" Format.DecimalDigits="2" HorzAlign="Right" Font="Arial, 10pt, style=Bold"/>
+        <TextObject Name="Text36" Left="472.5" Top="9.45" Width="132.3" Height="18.9" Text="Vehicle Total" Font="Arial, 10pt, style=Bold"/>
+        <LineObject Name="Line8" Left="9.45" Top="3.45" Width="720.2" Border.Color="LightGray"/>
+        <LineObject Name="Line9" Left="9.45" Top="33.35" Width="720.2" Border.Color="LightGray"/>
+      </DataFooterBand>
+    </DataBand>
+    <ColumnFooterBand Name="ColumnFooter1" Top="456.25" Width="740.5" Height="104.4">
+      <TextObject Name="Text37" Left="633.15" Top="9.45" Width="94.5" Height="18.9" Text="[Appointment.Tax]" Format="Currency" Format.UseLocale="true" Format.DecimalDigits="2" HorzAlign="Right" WordWrap="false" Font="Arial, 10pt, style=Bold" Trimming="EllipsisCharacter"/>
+      <TextObject Name="Text38" Left="472.5" Top="9.45" Width="132.3" Height="18.9" Text="Tax" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text39" Left="633.15" Top="37.8" Width="94.5" Height="18.9" Text="[Appointment.Discount]" Format="Currency" Format.UseLocale="true" Format.DecimalDigits="2" HorzAlign="Right" WordWrap="false" Font="Arial, 10pt, style=Bold" Trimming="EllipsisCharacter"/>
+      <TextObject Name="Text41" Left="472.5" Top="37.8" Width="132.3" Height="18.9" Text="Discounts" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text42" Left="614.25" Top="75.6" Width="113.4" Height="18.9" Text="[Appointment.EstimatedTotal]" Format="Currency" Format.UseLocale="true" Format.DecimalDigits="2" HorzAlign="Right" WordWrap="false" Font="Arial, 10pt, style=Bold" Trimming="EllipsisCharacter"/>
+      <TextObject Name="Text43" Left="472.5" Top="75.6" Width="132.3" Height="18.9" Text="Amount due" Font="Arial, 10pt, style=Bold"/>
+      <LineObject Name="Line10" Left="472.5" Top="66.15" Width="255.15"/>
+      <LineObject Name="Line11" Left="472.5" Top="103.95" Width="255.15"/>
+      <ContainerObject Name="WarrantyContainer" Left="9.45" Top="44.8" Width="406.35" Height="58.6" Fill.Color="224, 241, 234">
+        <TextObject Name="Text44" Left="38.25" Top="8.9" Width="360.55" Height="18.9" Text="[Appointment.Warranty]" Font="Arial Rounded MT Bold, 9.75pt"/>
+        <PictureObject Name="Picture2" Left="9.45" Top="14.9" Width="21.35" Height="26.8" ImageFormat="Png" Image="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"/>
+        <TextObject Name="Text45" Left="38.25" Top="32.25" Width="360.55" Height="18.9" Text="[Appointment.WarrantyUntil]" Font="Arial Rounded MT Bold, 9.75pt"/>
+      </ContainerObject>
+    </ColumnFooterBand>
+    <PageFooterBand Name="PageFooter1" Top="564.65" Width="740.5" Height="30.24">
+      <ShapeObject Name="Shape2" Top="18.9" Width="741.99" Height="11.34" Border.Color="Transparent" Fill.Color="18, 148, 95"/>
+    </PageFooterBand>
+  </ReportPage>
+</Report>

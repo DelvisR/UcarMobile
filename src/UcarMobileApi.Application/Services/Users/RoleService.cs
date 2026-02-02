@@ -7,12 +7,12 @@ using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using UcarMobileApi.Application.Common.Interfaces;
 using UcarMobileApi.Application.DTOs.Users;
-using UcarMobileApi.Application.Validators.Users;
+using UcarMobileApi.Application.Validators.Common;
 using UcarMobileApi.Core.Entities.Users;
 
 namespace UcarMobileApi.Application.Services.Users;
 
-public class RoleService(IAppDbContext context, IMapper mapper)
+public class RoleService(IAppDbContext context, IMapper mapper, IValidatorResolver validatorResolver)
 {
     public async Task<IEnumerable<RoleDto>> GetRolesAsync(CancellationToken ct)
     {
@@ -32,8 +32,7 @@ public class RoleService(IAppDbContext context, IMapper mapper)
     public async Task CreateRoleAsync(RoleDto dto, CancellationToken ct)
     {
         // Validation
-        var validator = new RoleValidator(context);
-        await validator.ValidateAndThrowAsync(dto, ct);
+        await validatorResolver.Get<RoleDto>().ValidateAndThrowAsync(dto, ct);
 
         var role = mapper.Map<Role>(dto);
 
@@ -44,8 +43,7 @@ public class RoleService(IAppDbContext context, IMapper mapper)
     public async Task UpdateRoleAsync(RoleDto dto, CancellationToken ct)
     {
         // Validation
-        var validator = new RoleValidator(context);
-        await validator.ValidateAndThrowAsync(dto, ct);
+        await validatorResolver.Get<RoleDto>().ValidateAndThrowAsync(dto, ct);
 
         var role = await context.Set<Role>().FirstOrDefaultAsync(r => r.Id == dto.Id, ct)
                    ?? throw new KeyNotFoundException($"Role with ID {dto.Id} not found.");

@@ -23,30 +23,48 @@ public class StripePaymentWebHookService(AppDbContext context, ILogger<StripePay
     /// </summary>
     public async Task HandlePaymentIntentWebhookAsync(PaymentIntent intent, CancellationToken cancellationToken = default)
     {
-        var existing = await context.Set<Payment>()
+        var payment = await context.Set<Payment>()
             .FirstOrDefaultAsync(p => p.ProviderPaymentId == intent.Id, cancellationToken);
 
-        if (existing == null)
+        if (payment == null)
         {
-            existing = new Payment
+            payment = new Payment
             {
                 ProviderPaymentId = intent.Id,
                 AmountCents = intent.Amount,
                 Currency = intent.Currency,
                 Status = intent.Status
             };
-            await context.Set<Payment>().AddAsync(existing, cancellationToken);
+            await context.Set<Payment>().AddAsync(payment, cancellationToken);
         }
         else
         {
-            existing.Status = intent.Status;
+            payment.Status = intent.Status;
         }
 
         await context.SaveChangesAsync(cancellationToken);
-        logger.LogInformation("Updated payment {PaymentId} -> {Status}", intent.Id, intent.Status);
 
-        //todo if failed send notification to admins (not implemented here)
+        logger.LogInformation("PaymentIntent {PaymentIntentId} updated to status {Status}", intent.Id, intent.Status);
+
+        // React to final payment outcome
+        switch (intent.Status)
+        {
+            case "succeeded":
+                // Payment completed successfully
+                // TODO: send notification to change the status of the appointment, for example
+                // intent.Metadata must bring the appointment ID to confirm the payment
+                break;
+
+            case "payment_failed":
+            case "requires_payment_method":
+                // TODO
+                // Payment failed after attempt
+                // e.g. notify admins or create an outstanding balance
+                logger.LogWarning("PaymentIntent {PaymentIntentId} failed definitively", intent.Id);
+                break;
+        }
     }
+
 
     /// <summary>
     /// Processes Stripe Refund webhook events (e.g. succeeded, failed, updated).

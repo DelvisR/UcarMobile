@@ -12,8 +12,9 @@ using UcarMobileApi.Application.Common.Helpers;
 using UcarMobileApi.Application.Common.Interfaces;
 using UcarMobileApi.Application.Common.Models;
 using UcarMobileApi.Application.DTOs.Technicians;
+using UcarMobileApi.Application.Services.Security;
 using UcarMobileApi.Application.Utilities;
-using UcarMobileApi.Application.Validators.Technicians;
+using UcarMobileApi.Application.Validators.Common;
 using UcarMobileApi.Core.Entities.Technicians;
 
 namespace UcarMobileApi.Application.Services.Technicians;
@@ -22,7 +23,8 @@ namespace UcarMobileApi.Application.Services.Technicians;
 /// Service for managing Technician entities.
 /// Provides CRUD operations with pagination, filtering, and validation.
 /// </summary>
-public class TechnicianService(IMapper mapper, IAppDbContext context, BusinessParameterService businessParameters, IGridifyMapper<Technician> gridifyMapper)
+public class TechnicianService(IMapper mapper, IAppDbContext context, BusinessParameterService businessParameters,
+    IGridifyMapper<Technician> gridifyMapper, IValidatorResolver validatorResolver, IUserAuthorizationService authorizationService)
 {
     /// <summary>
     /// Retrieves a paginated list of technicians with filtering and sorting.
@@ -32,12 +34,7 @@ public class TechnicianService(IMapper mapper, IAppDbContext context, BusinessPa
     /// <returns>A tuple containing pagination headers and the list of technician DTOs.</returns>
     public async Task<(IHeaderDictionary, IEnumerable<TechnicianDto>)> GetTechniciansAsync(QueryFilter query, CancellationToken ct)
     {
-        var technicians = context.Set<Technician>()
-            .Include(t => t.ServiceZones)
-                .ThenInclude(tsz => tsz.ServiceZone)
-            .Include(t => t.Specialities)
-                .ThenInclude(ts => ts.ServiceCategory)
-            .AsNoTracking();
+        var technicians = context.Set<Technician>().AsNoTracking();
 
         // Apply Gridify for filtering, ordering, and paging
         var qp = await technicians.GridifySafeAsync(query, gridifyMapper, ct);
@@ -55,14 +52,20 @@ public class TechnicianService(IMapper mapper, IAppDbContext context, BusinessPa
     public async Task<TechnicianDto?> GetTechnicianAsync(int id, CancellationToken ct)
     {
         return await context.Set<Technician>()
-            .Include(t => t.ServiceZones)
-                .ThenInclude(tsz => tsz.ServiceZone)
-            .Include(t => t.Specialities)
-                .ThenInclude(ts => ts.ServiceCategory)
             .AsNoTracking()
             .Where(t => t.Id == id)
             .ProjectTo<TechnicianDto>(mapper.ConfigurationProvider)
             .FirstOrDefaultAsync(ct);
+    }
+
+    public async Task<object?> GetCurrentTechnicianAsync(string currentUserAuthProviderId, CancellationToken ct)
+    {
+        var userId = await authorizationService.GetUserIdAsync(currentUserAuthProviderId, ct);
+
+        if (userId is null)
+            return null;
+
+        return await GetTechnicianAsync(userId.Value, ct);
     }
 
     /// <summary>
@@ -75,8 +78,7 @@ public class TechnicianService(IMapper mapper, IAppDbContext context, BusinessPa
     public async Task CreateTechnicianAsync(TechnicianDto dto, CancellationToken ct)
     {
         // Validate the DTO
-        var validator = new TechnicianValidator(context);
-        await validator.ValidateAndThrowAsync(dto, ct);
+        await validatorResolver.Get<TechnicianDto>().ValidateAndThrowAsync(dto, ct);
 
         // Map DTO to entity
         var technician = mapper.Map<Technician>(dto);
@@ -98,8 +100,7 @@ public class TechnicianService(IMapper mapper, IAppDbContext context, BusinessPa
     public async Task UpdateTechnicianAsync(int id, TechnicianDto dto, CancellationToken ct)
     {
         // Validate the DTO
-        var validator = new TechnicianValidator(context);
-        await validator.ValidateAndThrowAsync(dto, ct);
+        await validatorResolver.Get<TechnicianDto>().ValidateAndThrowAsync(dto, ct);
 
         // Find existing technician with related collections
         var technician = await context.Set<Technician>()
@@ -117,6 +118,25 @@ public class TechnicianService(IMapper mapper, IAppDbContext context, BusinessPa
         await context.SaveChangesAsync(ct);
     }
 
+    public async Task UpdateTechnicianPatchAsync(string authProviderId, TechnicianUpdateDto dto, CancellationToken ct)
+    {
+        var id = await authorizationService.GetUserIdAsync(authProviderId, ct) ?? 0;
+
+        dto.Id = id;
+
+        // validate if a validator exists
+        await validatorResolver.Get<TechnicianUpdateDto>().ValidateAndThrowAsync(dto, ct);
+
+        var entity = await context.Set<Technician>()
+                         .FirstOrDefaultAsync(t => t.Id == id, ct)
+                     ?? throw new KeyNotFoundException($"Technician not found for current user.");
+
+        // mapper configured to ignore nulls for patch mapping
+        mapper.Map(dto, entity);
+
+        await context.SaveChangesAsync(ct);
+    }
+
     /// <summary>
     /// Assigns or updates service zones for a technician.
     /// Uses AutoMapper.Collection to synchronize the collection.
@@ -128,8 +148,7 @@ public class TechnicianService(IMapper mapper, IAppDbContext context, BusinessPa
     public async Task AssignServiceZonesAsync(int id, List<TechnicianServiceZoneDto> serviceZones, CancellationToken ct)
     {
         // Validate the DTO
-        var validator = new TechnicianServiceZoneListValidator();
-        await validator.ValidateAndThrowAsync(serviceZones, ct);
+        await validatorResolver.Get<List<TechnicianServiceZoneDto>>().ValidateAndThrowAsync(serviceZones, ct);
 
         var technician = await context.Set<Technician>()
                              .Include(t => t.ServiceZones)
@@ -153,8 +172,7 @@ public class TechnicianService(IMapper mapper, IAppDbContext context, BusinessPa
     public async Task AssignSpecialitiesAsync(int id, List<TechnicianSpecialityDto> specialities, CancellationToken ct)
     {
         // Validate the DTO
-        var validator = new TechnicianSpecialityListValidator();
-        await validator.ValidateAndThrowAsync(specialities, ct);
+        await validatorResolver.Get<List<TechnicianSpecialityDto>>().ValidateAndThrowAsync(specialities, ct);
 
         var technician = await context.Set<Technician>()
                              .Include(t => t.Specialities)
@@ -175,10 +193,6 @@ public class TechnicianService(IMapper mapper, IAppDbContext context, BusinessPa
     public async Task<IEnumerable<TechnicianDto>> GetFreelanceTechniciansAsync(CancellationToken ct)
     {
         return await context.Set<Technician>()
-            .Include(t => t.ServiceZones)
-                .ThenInclude(tsz => tsz.ServiceZone)
-            .Include(t => t.Specialities)
-                .ThenInclude(ts => ts.ServiceCategory)
             .AsNoTracking()
             .Where(t => t.IsFreelance)
             .ProjectTo<TechnicianDto>(mapper.ConfigurationProvider)
@@ -193,10 +207,6 @@ public class TechnicianService(IMapper mapper, IAppDbContext context, BusinessPa
     public async Task<IEnumerable<TechnicianDto>> GetEmployeeTechniciansAsync(CancellationToken ct)
     {
         return await context.Set<Technician>()
-            .Include(t => t.ServiceZones)
-                .ThenInclude(tsz => tsz.ServiceZone)
-            .Include(t => t.Specialities)
-                .ThenInclude(ts => ts.ServiceCategory)
             .AsNoTracking()
             .Where(t => !t.IsFreelance)
             .ProjectTo<TechnicianDto>(mapper.ConfigurationProvider)
@@ -206,8 +216,7 @@ public class TechnicianService(IMapper mapper, IAppDbContext context, BusinessPa
     public async Task<Dictionary<string, List<string>>> GetAvailableSlotsAsync(AvailableSlotRequestDto request, CancellationToken ct)
     {
         // Validate the DTO
-        var validator = new AvailableSlotRequestValidator();
-        await validator.ValidateAndThrowAsync(request, ct);
+        await validatorResolver.Get<AvailableSlotRequestDto>().ValidateAndThrowAsync(request, ct);
 
         return await TechnicianAvailability.GetAvailableSlotsSqlAsync(context, businessParameters, request, ct);
     }
@@ -215,12 +224,39 @@ public class TechnicianService(IMapper mapper, IAppDbContext context, BusinessPa
     public async Task<TechnicianDto?> GetNearestAvailableTechnicianAsync(NearestAvailableRequestDto request, CancellationToken ct)
     {
         // Validate the DTO
-        var validator = new NearestAvailableRequestValidator();
-        await validator.ValidateAndThrowAsync(request, ct);
+        await validatorResolver.Get<NearestAvailableRequestDto>().ValidateAndThrowAsync(request, ct);
 
+        // Find the nearest technician using the internal service
         var technician = await TechnicianAvailability.GetNearestAvailableTechnicianAsync(context, businessParameters, request.Lat, request.Lng,
+            request.ZipCode, request.Specialties, request.LocalStar, request.LocalEnd, request.SearchRadiusMeters, ct);
+
+        return technician == null ? null : mapper.Map<TechnicianDto>(technician);
+    }
+
+    /// <summary>
+    /// Returns all available technicians that can cover the service during the specified UTC time range,
+    /// ordered by distance from the service location.
+    /// </summary>
+    /// <param name="request">DTO containing latitude, longitude, zip code, required specialties, appointment start/end, and optional search radius</param>
+    /// <param name="ct">Cancellation token</param>
+    /// <returns>List of <see cref="TechnicianWithDistanceDto"/> ordered by distance (nearest first)</returns>
+    public async Task<IReadOnlyList<TechnicianWithDistanceDto>> GetAvailableTechniciansAsync(NearestAvailableRequestDto request, CancellationToken ct)
+    {
+        // Validate the DTO
+        await validatorResolver.Get<NearestAvailableRequestDto>().ValidateAndThrowAsync(request, ct);
+
+        // Get all technicians with distance
+        var technicians = await TechnicianAvailability.GetAvailableTechniciansWithDistanceAsync(context, businessParameters, request.Lat, request.Lng,
             request.ZipCode, request.Specialties, request.LocalStar, request.LocalEnd, ct);
 
-        return mapper.Map<TechnicianDto>(technician);
+        // Map to DTO including distance
+        return technicians
+            .Select(x => new TechnicianWithDistanceDto
+            {
+                Technician = mapper.Map<TechnicianDto>(x.Technician),
+                DistanceMeters = x.DistanceMeters
+            })
+            .ToList();
     }
+
 }

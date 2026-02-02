@@ -10,14 +10,14 @@ using UcarMobileApi.Application.Common.Helpers;
 using UcarMobileApi.Application.Common.Interfaces;
 using UcarMobileApi.Application.DTOs.Services;
 using UcarMobileApi.Application.Services.Security;
-using UcarMobileApi.Application.Validators;
+using UcarMobileApi.Application.Validators.Common;
 
 namespace UcarMobileApi.Application.Services;
 
 /// <summary>
 /// Service responsible for managing service zones and validating whether a location is covered.
 /// </summary>
-public class ServiceZoneService(IAppDbContext context, IMapper mapper, ILocationService location, ICacheService cache)
+public class ServiceZoneService(IAppDbContext context, IMapper mapper, ILocationService location, ICacheService cache, IValidatorResolver validatorResolver)
 {
     private const string CacheKey = "ServiceZones";
 
@@ -26,8 +26,7 @@ public class ServiceZoneService(IAppDbContext context, IMapper mapper, ILocation
     /// </summary>
     public async Task<ServiceZoneDto> CreateAsync(ServiceZoneDto dto, CancellationToken ct)
     {
-        var validator = new ServiceZoneValidator();
-        await validator.ValidateAndThrowAsync(dto, ct);
+        await validatorResolver.Get<ServiceZoneDto>().ValidateAndThrowAsync(dto, ct);
 
         var geo = await location.GetCoordinatesFromAddressAsync(dto.BaseAddress, ct)
                   ?? throw new InvalidOperationException("Invalid BaseAddress. Cannot geocode.");
@@ -51,8 +50,7 @@ public class ServiceZoneService(IAppDbContext context, IMapper mapper, ILocation
     /// </summary>
     public async Task<ServiceZoneDto?> UpdateAsync(int id, ServiceZoneDto dto, CancellationToken ct)
     {
-        var validator = new ServiceZoneValidator();
-        await validator.ValidateAndThrowAsync(dto, ct);
+        await validatorResolver.Get<ServiceZoneDto>().ValidateAndThrowAsync(dto, ct);
 
         var zone = await context.Set<Core.Entities.Services.ServiceZone>().FirstOrDefaultAsync(z => z.Id == id, ct)
             ?? throw new KeyNotFoundException($"ServiceZone with ID {id} not found.");
@@ -110,7 +108,7 @@ public class ServiceZoneService(IAppDbContext context, IMapper mapper, ILocation
 
         var geo = await location.GetCoordinatesFromAddressAsync(address, ct);
         if (geo == null)
-            return new AddressValidationResult(false, 0, 0, string.Empty);
+            return new AddressValidationResult(false, 0, 0, string.Empty, string.Empty);
 
         return await ValidateLatLngZipAsync(geo.Lat, geo.Lng, geo.Zip, ct);
     }
@@ -123,7 +121,7 @@ public class ServiceZoneService(IAppDbContext context, IMapper mapper, ILocation
     {
         var geo = await location.GetPlaceLocationAsync(addressId, ct);
         if (geo == null)
-            return new AddressValidationResult(false, 0, 0, string.Empty);
+            return new AddressValidationResult(false, 0, 0, string.Empty, string.Empty);
 
         return await ValidateLatLngZipAsync(geo.Lat, geo.Lng, geo.Zip, ct);
     }
@@ -146,8 +144,10 @@ public class ServiceZoneService(IAppDbContext context, IMapper mapper, ILocation
     private async Task<AddressValidationResult> ValidateLatLngZipAsync(double lat, double lng, string zip, CancellationToken ct)
     {
         var zones = await GetAllAsync(ct);
+        var tz = TimeZoneHelper.GetTimeZone(lat, lng);
+
         if (zones.Count == 0)
-            return new AddressValidationResult(false, lat, lng, zip);
+            return new AddressValidationResult(false, lat, lng, zip, tz);
 
         // Filter by active zones and matching ZIP
         var zone = zones
@@ -158,6 +158,6 @@ public class ServiceZoneService(IAppDbContext context, IMapper mapper, ILocation
                 return distance <= z.RadiusMiles;
             });
 
-        return new AddressValidationResult(zone != null, lat, lng, zip);
+        return new AddressValidationResult(zone != null, lat, lng, zip, tz);
     }
 }

@@ -1,5 +1,6 @@
 using System.Threading;
 using System.Threading.Tasks;
+using UcarMobileApi.Core.Enums;
 
 namespace UcarMobileApi.Application.Common.Interfaces;
 
@@ -10,6 +11,7 @@ namespace UcarMobileApi.Application.Common.Interfaces;
 public interface INotificationService
 {
     Task SendEmailAsync(string to, string subject, string body, CancellationToken ct = default);
+    Task SendTemplateEmailAsync(string to, EmailTemplate templateName, string templateDataJson, CancellationToken ct = default);
     Task SendSmsAsync(string to, string message, CancellationToken ct = default);
     Task SendPushAsync(int userId, string title, string message, CancellationToken ct = default);
 }

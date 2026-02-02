@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using AutoMapper;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using UcarMobileApi.Application.Common.Helpers;
 using UcarMobileApi.Application.Common.Interfaces;
 using UcarMobileApi.Application.DTOs.Google.Location;
 using UcarMobileApi.Infrastructure.Providers;
@@ -133,9 +134,10 @@ public class LocationService(HttpClient httpClient, GoogleApiKeyProvider googleA
         }
 
         var postalCode = placeDetails.AddressComponents.FirstOrDefault(c => c.Types.Contains("postal_code"))?.LongText;
+        var tz = TimeZoneHelper.GetTimeZone(placeDetails.Location.Latitude, placeDetails.Location.Longitude);
 
         // Map to DTO
-        var locationDto = new LocationDto(placeDetails.Location.Latitude, placeDetails.Location.Longitude, postalCode ?? string.Empty);
+        var locationDto = new LocationDto(placeDetails.Location.Latitude, placeDetails.Location.Longitude, postalCode ?? string.Empty, tz);
 
         return locationDto;
     }
@@ -177,8 +179,8 @@ public class LocationService(HttpClient httpClient, GoogleApiKeyProvider googleA
         var location = geocodeResponse.Results[0].Geometry.Location;
         var postalCode = geocodeResponse.Results[0].AddressComponents.FirstOrDefault(c => c.Types.Contains("postal_code"))?.LongName;
 
-        return new LocationDto(location.Lat, location.Lng, postalCode ?? string.Empty);
+        var tz = TimeZoneHelper.GetTimeZone(location.Lat, location.Lng);
+
+        return new LocationDto(location.Lat, location.Lng, postalCode ?? string.Empty, tz);
     }
-
-
 }

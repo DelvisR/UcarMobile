@@ -7,6 +7,17 @@ using UcarMobileApi.Application.Validators.Users;
 
 namespace UcarMobileApi.Application.Validators.Technicians;
 
+public class TechnicianUpdateValidator : UserUpdateValidator<TechnicianUpdateDto>
+{
+    public TechnicianUpdateValidator(IAppDbContext dbContext)
+        : base(dbContext)
+    {
+        RuleFor(x => x.BaseAddress)
+            .SetValidator(new AddressInfoValidator()!)
+            .When(x => x.BaseAddress != null);
+    }
+}
+
 /// <summary>
 /// Validator for TechnicianDto.
 /// Includes validation rules for service zones, specialities,

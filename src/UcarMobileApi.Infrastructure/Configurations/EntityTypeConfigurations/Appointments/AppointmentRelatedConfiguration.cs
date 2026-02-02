@@ -14,26 +14,39 @@ public class AppointmentDocumentConfiguration : IEntityTypeConfiguration<Appoint
         // Composite PK
         builder.HasKey(x => new { x.AppointmentId, x.StoredFileId });
 
+        builder.Property(an => an.Source)
+            .IsRequired()
+            .HasConversion<byte>();
+
         // Relationships
         builder.HasOne(ad => ad.Appointment)
             .WithMany(a => a.Documents)
             .HasForeignKey(ad => ad.AppointmentId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .OnDelete(DeleteBehavior.ClientCascade);
 
         builder.HasOne(ad => ad.StoredFile)
-            .WithMany()
-            .HasForeignKey(ad => ad.StoredFileId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .WithOne()
+            .HasForeignKey<AppointmentDocument>(ad => ad.StoredFileId)
+            .OnDelete(DeleteBehavior.Restrict);
+    }
+}
 
-        builder.HasOne(ad => ad.AppointmentNote)
-            .WithMany()
-            .HasForeignKey(ad => ad.AppointmentNoteId)
-            .OnDelete(DeleteBehavior.Cascade);
+public class AppointmentNoteDocumentConfiguration : IEntityTypeConfiguration<AppointmentNoteDocument>
+{
+    public void Configure(EntityTypeBuilder<AppointmentNoteDocument> builder)
+    {
+        // Composite PK
+        builder.HasKey(x => new { x.AppointmentNoteId, x.StoredFileId });
 
-        // Indexes
-        //builder.HasIndex(ad => ad.AppointmentId);
-        //builder.HasIndex(ad => ad.StoredFileId);
-        builder.HasIndex(ad => ad.AppointmentNoteId);
+        builder.HasOne(d => d.AppointmentNote)
+            .WithMany(n => n.Documents)
+            .HasForeignKey(d => d.AppointmentNoteId)
+            .OnDelete(DeleteBehavior.ClientCascade);
+
+        builder.HasOne(d => d.StoredFile)
+            .WithOne()
+            .HasForeignKey<AppointmentNoteDocument>(ad => ad.StoredFileId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }
 
@@ -54,7 +67,7 @@ public class AppointmentNoteConfiguration : IEntityTypeConfiguration<Appointment
         builder.HasOne(an => an.Appointment)
             .WithMany(a => a.Notes)
             .HasForeignKey(an => an.AppointmentId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .OnDelete(DeleteBehavior.ClientCascade);
 
         // Indexes
         builder.HasIndex(an => an.AppointmentId);
@@ -67,16 +80,13 @@ public class AppointmentServiceConfiguration : IEntityTypeConfiguration<Appointm
 {
     public void Configure(EntityTypeBuilder<AppointmentService> builder)
     {
-        // Composite PK
-        builder.HasKey(x => new { x.AppointmentVehicleId, x.ServiceId });
-
         // Properties
         builder.Property(s => s.Price)
             .HasColumnType("decimal(18,2)")
             .IsRequired();
 
-        builder.Property(s => s.Notes)
-            .HasMaxLength(500);
+        builder.Property(s => s.CustomService)
+            .HasMaxLength(200);
 
         // Relationships
         builder.HasOne(s => s.AppointmentVehicle)
@@ -111,17 +121,20 @@ public class AppointmentPartConfiguration : IEntityTypeConfiguration<Appointment
             .HasColumnType("decimal(18,2)")
             .IsRequired();
 
-        builder.Property(ap => ap.Notes)
+        builder.Property(ap => ap.IsCustomerProvidedPart)
+            .IsRequired()
+            .HasDefaultValue(false);
+
+        builder.Property(ap => ap.Note)
             .HasMaxLength(500);
 
         // Relationships
-        builder.HasOne(ap => ap.AppointmentVehicle)
+        builder.HasOne(ap => ap.AppointmentService)
             .WithMany(av => av.Parts)
-            .HasForeignKey(ap => ap.AppointmentVehicleId)
+            .HasForeignKey(ap => ap.AppointmentServiceId)
             .OnDelete(DeleteBehavior.Cascade);
 
         // Indexes
-        builder.HasIndex(ap => ap.AppointmentVehicleId);
         builder.HasIndex(ap => ap.PartNumber);
     }
 }
@@ -155,3 +168,38 @@ public class AppointmentVehicleConfiguration : IEntityTypeConfiguration<Appointm
         builder.HasIndex(av => new { av.AppointmentId, av.VehicleId, av.TechnicianId }).IsUnique();
     }
 }
+
+public class AppointmentDiscountConfiguration : IEntityTypeConfiguration<AppointmentDiscount>
+{
+    public void Configure(EntityTypeBuilder<AppointmentDiscount> builder)
+    {
+        builder.Property(d => d.Category).HasConversion<byte>();
+        builder.Property(d => d.Type).HasConversion<byte>();
+        builder.Property(d => d.Source).HasConversion<byte>();
+
+        builder.Property(d => d.Value)
+            .HasColumnType("decimal(10,2)")
+            .IsRequired();
+
+        builder.Property(d => d.Amount)
+            .HasColumnType("decimal(10,2)")
+            .IsRequired();
+
+        builder.Property(d => d.Code)
+            .HasMaxLength(50);
+
+        builder.Property(d => d.Reason)
+            .HasMaxLength(200)
+            .IsRequired();
+
+        // RELATIONSHIP WITH APPOINTMENT
+        builder.HasOne(d => d.Appointment)
+            .WithMany(a => a.Discounts)
+            .HasForeignKey(d => d.AppointmentId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasIndex(d => new { d.AppointmentId, d.Category })
+            .IsUnique();
+    }
+}
+

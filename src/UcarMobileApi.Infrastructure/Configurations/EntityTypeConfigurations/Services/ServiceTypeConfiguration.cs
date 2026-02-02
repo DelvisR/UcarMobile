@@ -12,6 +12,10 @@ public class ServiceTypeConfiguration : IEntityTypeConfiguration<ServiceType>
             .HasMaxLength(100)
             .IsRequired();
 
+        builder.Property(st => st.IsWarrantyApplicable)
+            .IsRequired()
+            .HasDefaultValue(false);
+
         builder.HasIndex(st => st.Title).IsUnique();
     }
 }

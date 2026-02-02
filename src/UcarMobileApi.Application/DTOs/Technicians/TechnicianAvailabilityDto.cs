@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using UcarMobileApi.Core.Entities.Technicians;
 
 namespace UcarMobileApi.Application.DTOs.Technicians;
 
@@ -37,4 +38,27 @@ public class NearestAvailableRequestDto : AvailableSlotRequestDto
 {
     public DateTime LocalStar { get; set; }
     public DateTime LocalEnd { get; set; }
+    public double SearchRadiusMeters { get; set; } = 50_000;
+}
+
+/// <summary>
+/// Represents a technician along with its distance (in meters)
+/// from the requested service location.
+/// </summary>
+public sealed record TechnicianWithDistance(Technician Technician, double DistanceMeters);
+
+/// <summary>
+/// Represents a technician along with the distance to a given point (in meters)
+/// </summary>
+public class TechnicianWithDistanceDto
+{
+    /// <summary>
+    /// Technician information
+    /// </summary>
+    public TechnicianDto Technician { get; set; } = null!;
+
+    /// <summary>
+    /// Distance from the service location in meters
+    /// </summary>
+    public double DistanceMeters { get; set; }
 }

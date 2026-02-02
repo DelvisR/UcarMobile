@@ -1,7 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using UcarMobileApi.Application.DTOs.Users;
+using UcarMobileApi.Application.Services.Users;
 using UcarMobileApi.Authorization;
-using UcarMobileApi.Infrastructure.Services.Notifications;
+using UcarMobileApi.Infrastructure.Services;
 
 namespace UcarMobileApi.Controllers.Users;
 
@@ -10,7 +11,7 @@ namespace UcarMobileApi.Controllers.Users;
 /// </summary>
 [ApiController]
 [Route("api/devices")]
-public class DevicesController(DeviceRegistrationService registration) : ControllerBase
+public class DevicesController(DeviceRegistrationService registration, CurrentUserService currentUser) : ControllerBase
 {
     /// <summary>
     /// Registers a device for push notifications using the provided token and platform.
@@ -23,7 +24,7 @@ public class DevicesController(DeviceRegistrationService registration) : Control
     [RequireAction("ACTION_REGISTER_DEVICE")]
     public async Task<IActionResult> Register([FromBody] RegisterDeviceDto dto, CancellationToken ct)
     {
-        var arn = await registration.RegisterDeviceAsync(dto, ct);
+        var arn = await registration.RegisterDeviceAsync(currentUser.AuthProviderId, dto, ct);
         return Ok(new { EndpointArn = arn });
     }
 }

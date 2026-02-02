@@ -126,6 +126,11 @@ public class NotificationBackgroundService(IAmazonSQS sqs, INotificationService 
                 await notificationService.SendEmailAsync(message.Email.To, message.Email.Subject, message.Email.Body, ct);
                 break;
 
+            case NotificationType.TemplateEmail when message.TemplateEmail is not null:
+                await notificationService.SendTemplateEmailAsync(message.TemplateEmail.To, message.TemplateEmail.Template,
+                    message.TemplateEmail.TemplateDataJson, ct);
+                break;
+
             case NotificationType.Sms when message.Sms is not null:
                 await notificationService.SendSmsAsync(message.Sms.To, message.Sms.Message, ct);
                 break;

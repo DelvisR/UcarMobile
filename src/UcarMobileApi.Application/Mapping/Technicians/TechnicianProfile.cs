@@ -2,6 +2,7 @@ using AutoMapper;
 using AutoMapper.EquivalencyExpression;
 using UcarMobileApi.Application.DTOs.Technicians;
 using UcarMobileApi.Application.DTOs.Users;
+using UcarMobileApi.Application.Mapping.Common;
 using UcarMobileApi.Core.Entities.Technicians;
 using UcarMobileApi.Core.Entities.Users;
 
@@ -27,6 +28,14 @@ public class TechnicianProfile : Profile
                 .ForMember(dest => dest.ProviderDisplayName, opt => opt.Ignore())
                 .ForMember(dest => dest.ProviderPaymentsEnabled, opt => opt.Ignore())
                 .EqualityComparison((dto, entity) => dto.Id == entity.Id); // smart update
+
+        CreateMap<Technician, TechnicianBasicDto>()
+            .IncludeBase<User, UserDto>();
+
+        // Partial Update
+        CreateMap<TechnicianUpdateDto, Technician>()
+            .IncludeBase<UserUpdateDto, User>()
+            .IgnoreNullValuesForPatch();
 
         // Map TechnicianServiceZone entity to TechnicianServiceZoneDto
         CreateMap<TechnicianSpecialityDto, TechnicianSpeciality>()

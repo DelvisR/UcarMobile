@@ -86,11 +86,11 @@ namespace UcarMobileApi.Middleware
                     };
                     break;
 
-                case KeyNotFoundException _:
+                case KeyNotFoundException argEx:
                     statusCode = (int)HttpStatusCode.BadRequest;
                     response = new
                     {
-                        message = "Invalid key or argument provided.",
+                        message = argEx.Message,
                         traceId = context.TraceIdentifier
                     };
                     break;
@@ -105,10 +105,10 @@ namespace UcarMobileApi.Middleware
                     break;
 
                 case BusinessException businessExceptionEx:
-                    statusCode = (int)HttpStatusCode.FailedDependency;
+                    statusCode = (int)HttpStatusCode.UnprocessableContent;
                     response = new
                     {
-                        message = businessExceptionEx?.Message ?? "A business rule was violated.",
+                        message = businessExceptionEx.Message,
                         traceId = context.TraceIdentifier
                     };
                     break;

@@ -21,6 +21,12 @@ public class UserAuthorizationService(IAppDbContext context, CognitoRootUserOpti
     // Sliding expiration for cached actions
     private static readonly TimeSpan CacheSlidingExpiration = TimeSpan.FromMinutes(30);
 
+    // Cache key prefix (use with authProviderId appended)
+    private const string UserActionsCacheKeyPrefix = "user_actions_v2";
+
+    // Single cache object that holds both the UserId and the list of actions.
+    private sealed record CachedUserActions(int? UserId, List<UserActionDto> Actions);
+
     /// <summary>
     /// Checks if a user has a specific action by its name.
     /// </summary>
@@ -55,7 +61,8 @@ public class UserAuthorizationService(IAppDbContext context, CognitoRootUserOpti
     }
 
     /// <summary>
-    /// Retrieves and caches all actions for a user from the database, including resource.
+    /// Retrieves and caches all actions for a user from the database, including resource,
+    /// and also caches the corresponding User.Id in the same cache object.
     /// </summary>
     /// <param name="authProviderId">User's Cognito ID.</param>
     /// <param name="ct">Cancellation token.</param>
@@ -63,29 +70,70 @@ public class UserAuthorizationService(IAppDbContext context, CognitoRootUserOpti
     public async Task<List<UserActionDto>> GetUserActionsAsync(string authProviderId, CancellationToken ct)
     {
         // Change cache key to v2 to avoid conflicts with old cache
-        var cacheKey = $"user_actions_v2:{authProviderId}";
+        var cacheKey = $"{UserActionsCacheKeyPrefix}:{authProviderId}";
 
         // Check cache first
-        var cached = await cache.GetAsync<List<UserActionDto>>(cacheKey);
+        var cached = await cache.GetAsync<CachedUserActions>(cacheKey);
         if (cached is not null)
-            return cached;
+            return cached.Actions;
 
-        // Load actions directly from the database (project Name + Resource)
-        var actions = await context.Set<User>()
+        // Load user id (only) first to know if user exists and is active
+        var userIdObj = await context.Set<User>()
             .AsNoTracking()
             .Where(u => u.AuthProviderId == authProviderId && u.IsActive)
-            .SelectMany(u => u.UserRoles)
-            .SelectMany(ur => ur.Role.RoleActions)
-            .Select(rp => new UserActionDto(
-                rp.Action.Name,
-                rp.Action.Resource))
-            .Distinct() // optional: distinct on Name+Resource
-            .ToListAsync(ct);
+            .Select(u => new { u.Id })
+            .FirstOrDefaultAsync(ct);
+
+        var userId = userIdObj?.Id;
+
+        List<UserActionDto> actions;
+
+        if (userId is null)
+        {
+            // User not found or not active -> empty actions
+            actions = [];
+        }
+        else
+        {
+            // Load actions directly from the database (project Name + Resource)
+            actions = await context.Set<User>()
+                .AsNoTracking()
+                .Where(u => u.AuthProviderId == authProviderId && u.IsActive)
+                .SelectMany(u => u.UserRoles)
+                .SelectMany(ur => ur.Role.RoleActions)
+                .Select(rp => new UserActionDto(
+                    rp.Action.Name,
+                    rp.Action.Resource))
+                .Distinct() // optional: distinct on Name+Resource
+                .ToListAsync(ct);
+        }
 
         // Save to cache (even empty lists if the user does not exist)
-        await cache.SetAsync(cacheKey, actions, null, CacheSlidingExpiration);
+        var toCache = new CachedUserActions(userId, actions);
+        await cache.SetAsync(cacheKey, toCache, null, CacheSlidingExpiration);
 
         return actions;
+    }
+
+    /// <summary>
+    /// Returns cached User.Id for a given authProviderId. Populates the same cache used by GetUserActionsAsync.
+    /// </summary>
+    /// <param name="authProviderId">User's Cognito ID.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>User.Id if found, otherwise null.</returns>
+    public async Task<int?> GetUserIdAsync(string authProviderId, CancellationToken ct)
+    {
+        var cacheKey = $"{UserActionsCacheKeyPrefix}:{authProviderId}";
+
+        var cached = await cache.GetAsync<CachedUserActions>(cacheKey);
+        if (cached is not null)
+            return cached.UserId;
+
+        // Ensure cache is populated by calling GetUserActionsAsync
+        await GetUserActionsAsync(authProviderId, ct);
+
+        cached = await cache.GetAsync<CachedUserActions>(cacheKey);
+        return cached?.UserId;
     }
 
     /// <summary>

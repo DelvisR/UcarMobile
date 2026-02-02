@@ -33,8 +33,15 @@ namespace UcarMobileApi.Infrastructure.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("CancellationReason")
+                        .HasMaxLength(250)
+                        .HasColumnType("character varying(250)");
+
                     b.Property<int>("ClientId")
                         .HasColumnType("integer");
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("CreatedBy")
                         .IsRequired()
@@ -68,6 +75,9 @@ namespace UcarMobileApi.Infrastructure.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasDefaultValueSql("NOW() AT TIME ZONE 'UTC'");
 
+                    b.Property<int?>("PaymentMethodId")
+                        .HasColumnType("integer");
+
                     b.Property<byte>("PaymentStatus")
                         .HasColumnType("smallint");
 
@@ -80,9 +90,20 @@ namespace UcarMobileApi.Infrastructure.Migrations
                     b.Property<byte>("Status")
                         .HasColumnType("smallint");
 
+                    b.Property<decimal>("Tax")
+                        .HasColumnType("decimal(10,2)");
+
+                    b.Property<int>("WarrantyMiles")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("WarrantyMonths")
+                        .HasColumnType("integer");
+
                     b.HasKey("Id");
 
                     b.HasIndex("ClientId");
+
+                    b.HasIndex("PaymentMethodId");
 
                     b.HasIndex("ScheduledStart");
 
@@ -93,15 +114,84 @@ namespace UcarMobileApi.Infrastructure.Migrations
                     b.ToTable("Appointment");
                 });
 
+            modelBuilder.Entity("UcarMobileApi.Core.Entities.Appointments.AppointmentDiscount", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(10,2)");
+
+                    b.Property<int>("AppointmentId")
+                        .HasColumnType("integer");
+
+                    b.Property<byte>("Category")
+                        .HasColumnType("smallint");
+
+                    b.Property<string>("Code")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasDefaultValue("System");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("NOW() AT TIME ZONE 'UTC'");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<string>("LastModifiedBy")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasDefaultValue("System");
+
+                    b.Property<DateTime>("LastModifiedDate")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("NOW() AT TIME ZONE 'UTC'");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<byte>("Source")
+                        .HasColumnType("smallint");
+
+                    b.Property<byte>("Type")
+                        .HasColumnType("smallint");
+
+                    b.Property<decimal>("Value")
+                        .HasColumnType("decimal(10,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AppointmentId", "Category")
+                        .IsUnique();
+
+                    b.ToTable("AppointmentDiscount");
+                });
+
             modelBuilder.Entity("UcarMobileApi.Core.Entities.Appointments.AppointmentDocument", b =>
                 {
                     b.Property<int>("AppointmentId")
                         .HasColumnType("integer");
 
                     b.Property<int>("StoredFileId")
-                        .HasColumnType("integer");
-
-                    b.Property<int?>("AppointmentNoteId")
                         .HasColumnType("integer");
 
                     b.Property<string>("CreatedBy")
@@ -128,11 +218,13 @@ namespace UcarMobileApi.Infrastructure.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasDefaultValueSql("NOW() AT TIME ZONE 'UTC'");
 
+                    b.Property<byte>("Source")
+                        .HasColumnType("smallint");
+
                     b.HasKey("AppointmentId", "StoredFileId");
 
-                    b.HasIndex("AppointmentNoteId");
-
-                    b.HasIndex("StoredFileId");
+                    b.HasIndex("StoredFileId")
+                        .IsUnique();
 
                     b.ToTable("AppointmentDocument");
                 });
@@ -196,15 +288,12 @@ namespace UcarMobileApi.Infrastructure.Migrations
                     b.ToTable("AppointmentNote");
                 });
 
-            modelBuilder.Entity("UcarMobileApi.Core.Entities.Appointments.AppointmentPart", b =>
+            modelBuilder.Entity("UcarMobileApi.Core.Entities.Appointments.AppointmentNoteDocument", b =>
                 {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
+                    b.Property<int>("AppointmentNoteId")
                         .HasColumnType("integer");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("AppointmentVehicleId")
+                    b.Property<int>("StoredFileId")
                         .HasColumnType("integer");
 
                     b.Property<string>("CreatedBy")
@@ -218,6 +307,54 @@ namespace UcarMobileApi.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
                         .HasDefaultValueSql("NOW() AT TIME ZONE 'UTC'");
+
+                    b.Property<string>("LastModifiedBy")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasDefaultValue("System");
+
+                    b.Property<DateTime>("LastModifiedDate")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("NOW() AT TIME ZONE 'UTC'");
+
+                    b.HasKey("AppointmentNoteId", "StoredFileId");
+
+                    b.HasIndex("StoredFileId")
+                        .IsUnique();
+
+                    b.ToTable("AppointmentNoteDocument");
+                });
+
+            modelBuilder.Entity("UcarMobileApi.Core.Entities.Appointments.AppointmentPart", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AppointmentServiceId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasDefaultValue("System");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("NOW() AT TIME ZONE 'UTC'");
+
+                    b.Property<bool>("IsCustomerProvidedPart")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
 
                     b.Property<bool>("IsDeleted")
                         .ValueGeneratedOnAdd()
@@ -236,7 +373,7 @@ namespace UcarMobileApi.Infrastructure.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasDefaultValueSql("NOW() AT TIME ZONE 'UTC'");
 
-                    b.Property<string>("Notes")
+                    b.Property<string>("Note")
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
 
@@ -259,7 +396,7 @@ namespace UcarMobileApi.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("AppointmentVehicleId");
+                    b.HasIndex("AppointmentServiceId");
 
                     b.HasIndex("PartNumber");
 
@@ -268,10 +405,13 @@ namespace UcarMobileApi.Infrastructure.Migrations
 
             modelBuilder.Entity("UcarMobileApi.Core.Entities.Appointments.AppointmentService", b =>
                 {
-                    b.Property<int>("AppointmentVehicleId")
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("integer");
 
-                    b.Property<int>("ServiceId")
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AppointmentVehicleId")
                         .HasColumnType("integer");
 
                     b.Property<string>("CreatedBy")
@@ -286,6 +426,15 @@ namespace UcarMobileApi.Infrastructure.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasDefaultValueSql("NOW() AT TIME ZONE 'UTC'");
 
+                    b.Property<string>("CustomService")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
                     b.Property<string>("LastModifiedBy")
                         .IsRequired()
                         .ValueGeneratedOnAdd()
@@ -298,14 +447,15 @@ namespace UcarMobileApi.Infrastructure.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasDefaultValueSql("NOW() AT TIME ZONE 'UTC'");
 
-                    b.Property<string>("Notes")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
                     b.Property<decimal>("Price")
                         .HasColumnType("decimal(18,2)");
 
-                    b.HasKey("AppointmentVehicleId", "ServiceId");
+                    b.Property<int?>("ServiceId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AppointmentVehicleId");
 
                     b.HasIndex("ServiceId");
 
@@ -352,7 +502,10 @@ namespace UcarMobileApi.Infrastructure.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasDefaultValueSql("NOW() AT TIME ZONE 'UTC'");
 
-                    b.Property<int>("TechnicianId")
+                    b.Property<int>("OdometerKm")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("TechnicianId")
                         .HasColumnType("integer");
 
                     b.Property<int>("VehicleId")
@@ -379,6 +532,9 @@ namespace UcarMobileApi.Infrastructure.Migrations
                         .HasColumnType("integer");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("AzId")
+                        .HasColumnType("integer");
 
                     b.Property<string>("BodyType")
                         .HasMaxLength(80)
@@ -432,6 +588,9 @@ namespace UcarMobileApi.Infrastructure.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
 
+                    b.Property<int>("OdometerKm")
+                        .HasColumnType("integer");
+
                     b.Property<string>("Submodel")
                         .HasMaxLength(60)
                         .HasColumnType("character varying(60)");
@@ -449,17 +608,14 @@ namespace UcarMobileApi.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ClientId");
-
-                    b.HasIndex("LicensePlate");
-
                     b.HasIndex("VIN")
                         .IsUnique();
 
                     b.HasIndex("VehicleId");
 
-                    b.HasIndex("ClientId", "VehicleId")
-                        .IsUnique();
+                    b.HasIndex("ClientId", "VehicleId", "AzId")
+                        .IsUnique()
+                        .HasFilter("\"AzId\" IS NOT NULL");
 
                     b.ToTable("ClientVehicle");
                 });
@@ -532,6 +688,11 @@ namespace UcarMobileApi.Infrastructure.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
                     b.Property<string>("CreatedBy")
                         .IsRequired()
                         .ValueGeneratedOnAdd()
@@ -570,6 +731,9 @@ namespace UcarMobileApi.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
                         .HasDefaultValueSql("NOW() AT TIME ZONE 'UTC'");
+
+                    b.Property<int>("Order")
+                        .HasColumnType("integer");
 
                     b.Property<string>("Value")
                         .IsRequired()
@@ -1130,6 +1294,11 @@ namespace UcarMobileApi.Infrastructure.Migrations
                         .HasColumnType("boolean")
                         .HasDefaultValue(false);
 
+                    b.Property<bool>("IsWarrantyApplicable")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
                     b.Property<string>("LastModifiedBy")
                         .IsRequired()
                         .ValueGeneratedOnAdd()
@@ -1262,6 +1431,11 @@ namespace UcarMobileApi.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
                         .HasDefaultValueSql("NOW() AT TIME ZONE 'UTC'");
+
+                    b.Property<byte>("DeleteStatus")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("smallint")
+                        .HasDefaultValue((byte)0);
 
                     b.Property<string>("FileName")
                         .IsRequired()
@@ -1670,10 +1844,10 @@ namespace UcarMobileApi.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId", "Token")
+                    b.HasIndex("UserId", "Token", "Platform")
                         .IsUnique();
 
-                    b.ToTable("Device", (string)null);
+                    b.ToTable("Device");
                 });
 
             modelBuilder.Entity("UcarMobileApi.Core.Entities.Users.Role", b =>
@@ -1803,6 +1977,9 @@ namespace UcarMobileApi.Infrastructure.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
+                    b.Property<int?>("ImageStoredFileId")
+                        .HasColumnType("integer");
+
                     b.Property<bool>("IsActive")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
@@ -1847,6 +2024,9 @@ namespace UcarMobileApi.Infrastructure.Migrations
                         .IsUnique();
 
                     b.HasIndex("Email")
+                        .IsUnique();
+
+                    b.HasIndex("ImageStoredFileId")
                         .IsUnique();
 
                     b.HasIndex("IsActive");
@@ -2130,6 +2310,11 @@ namespace UcarMobileApi.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("UcarMobileApi.Core.Entities.Payments.PaymentMethod", "PaymentMethod")
+                        .WithMany("Appointments")
+                        .HasForeignKey("PaymentMethodId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.OwnsOne("UcarMobileApi.Core.Entities.Common.AddressInfo", "ServiceAddress", b1 =>
                         {
                             b1.Property<int>("AppointmentId")
@@ -2139,6 +2324,7 @@ namespace UcarMobileApi.Infrastructure.Migrations
                                 .IsRequired()
                                 .ValueGeneratedOnAdd()
                                 .HasColumnType("geometry(Point, 4326)")
+                                .HasColumnName("BasePoint")
                                 .HasDefaultValueSql("ST_SetSRID(ST_MakePoint(-96.6702438, 33.0146527), 4326)");
 
                             b1.Property<string>("FullAddress")
@@ -2171,8 +2357,21 @@ namespace UcarMobileApi.Infrastructure.Migrations
 
                     b.Navigation("Client");
 
+                    b.Navigation("PaymentMethod");
+
                     b.Navigation("ServiceAddress")
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("UcarMobileApi.Core.Entities.Appointments.AppointmentDiscount", b =>
+                {
+                    b.HasOne("UcarMobileApi.Core.Entities.Appointments.Appointment", "Appointment")
+                        .WithMany("Discounts")
+                        .HasForeignKey("AppointmentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Appointment");
                 });
 
             modelBuilder.Entity("UcarMobileApi.Core.Entities.Appointments.AppointmentDocument", b =>
@@ -2180,23 +2379,16 @@ namespace UcarMobileApi.Infrastructure.Migrations
                     b.HasOne("UcarMobileApi.Core.Entities.Appointments.Appointment", "Appointment")
                         .WithMany("Documents")
                         .HasForeignKey("AppointmentId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.ClientCascade)
                         .IsRequired();
 
-                    b.HasOne("UcarMobileApi.Core.Entities.Appointments.AppointmentNote", "AppointmentNote")
-                        .WithMany()
-                        .HasForeignKey("AppointmentNoteId")
-                        .OnDelete(DeleteBehavior.Cascade);
-
                     b.HasOne("UcarMobileApi.Core.Entities.Storage.StoredFile", "StoredFile")
-                        .WithMany()
-                        .HasForeignKey("StoredFileId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .WithOne()
+                        .HasForeignKey("UcarMobileApi.Core.Entities.Appointments.AppointmentDocument", "StoredFileId")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Appointment");
-
-                    b.Navigation("AppointmentNote");
 
                     b.Navigation("StoredFile");
                 });
@@ -2206,21 +2398,40 @@ namespace UcarMobileApi.Infrastructure.Migrations
                     b.HasOne("UcarMobileApi.Core.Entities.Appointments.Appointment", "Appointment")
                         .WithMany("Notes")
                         .HasForeignKey("AppointmentId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.ClientCascade)
                         .IsRequired();
 
                     b.Navigation("Appointment");
                 });
 
+            modelBuilder.Entity("UcarMobileApi.Core.Entities.Appointments.AppointmentNoteDocument", b =>
+                {
+                    b.HasOne("UcarMobileApi.Core.Entities.Appointments.AppointmentNote", "AppointmentNote")
+                        .WithMany("Documents")
+                        .HasForeignKey("AppointmentNoteId")
+                        .OnDelete(DeleteBehavior.ClientCascade)
+                        .IsRequired();
+
+                    b.HasOne("UcarMobileApi.Core.Entities.Storage.StoredFile", "StoredFile")
+                        .WithOne()
+                        .HasForeignKey("UcarMobileApi.Core.Entities.Appointments.AppointmentNoteDocument", "StoredFileId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("AppointmentNote");
+
+                    b.Navigation("StoredFile");
+                });
+
             modelBuilder.Entity("UcarMobileApi.Core.Entities.Appointments.AppointmentPart", b =>
                 {
-                    b.HasOne("UcarMobileApi.Core.Entities.Appointments.AppointmentVehicle", "AppointmentVehicle")
+                    b.HasOne("UcarMobileApi.Core.Entities.Appointments.AppointmentService", "AppointmentService")
                         .WithMany("Parts")
-                        .HasForeignKey("AppointmentVehicleId")
+                        .HasForeignKey("AppointmentServiceId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("AppointmentVehicle");
+                    b.Navigation("AppointmentService");
                 });
 
             modelBuilder.Entity("UcarMobileApi.Core.Entities.Appointments.AppointmentService", b =>
@@ -2234,8 +2445,7 @@ namespace UcarMobileApi.Infrastructure.Migrations
                     b.HasOne("UcarMobileApi.Core.Entities.Services.Service", "Service")
                         .WithMany("Appointments")
                         .HasForeignKey("ServiceId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("AppointmentVehicle");
 
@@ -2253,8 +2463,7 @@ namespace UcarMobileApi.Infrastructure.Migrations
                     b.HasOne("UcarMobileApi.Core.Entities.Technicians.Technician", "Technician")
                         .WithMany("Appointments")
                         .HasForeignKey("TechnicianId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("UcarMobileApi.Core.Entities.Clients.ClientVehicle", "Vehicle")
                         .WithMany("Appointments")
@@ -2470,7 +2679,7 @@ namespace UcarMobileApi.Infrastructure.Migrations
             modelBuilder.Entity("UcarMobileApi.Core.Entities.Users.Device", b =>
                 {
                     b.HasOne("UcarMobileApi.Core.Entities.Users.User", "User")
-                        .WithMany()
+                        .WithMany("Devices")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -2495,6 +2704,16 @@ namespace UcarMobileApi.Infrastructure.Migrations
                     b.Navigation("Action");
 
                     b.Navigation("Role");
+                });
+
+            modelBuilder.Entity("UcarMobileApi.Core.Entities.Users.User", b =>
+                {
+                    b.HasOne("UcarMobileApi.Core.Entities.Storage.StoredFile", "ImageStoredFile")
+                        .WithOne()
+                        .HasForeignKey("UcarMobileApi.Core.Entities.Users.User", "ImageStoredFileId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("ImageStoredFile");
                 });
 
             modelBuilder.Entity("UcarMobileApi.Core.Entities.Users.UserRole", b =>
@@ -2564,6 +2783,7 @@ namespace UcarMobileApi.Infrastructure.Migrations
                                 .IsRequired()
                                 .ValueGeneratedOnAdd()
                                 .HasColumnType("geometry(Point, 4326)")
+                                .HasColumnName("BasePoint")
                                 .HasDefaultValueSql("ST_SetSRID(ST_MakePoint(-96.6702438, 33.0146527), 4326)");
 
                             b1.Property<string>("FullAddress")
@@ -2600,6 +2820,8 @@ namespace UcarMobileApi.Infrastructure.Migrations
 
             modelBuilder.Entity("UcarMobileApi.Core.Entities.Appointments.Appointment", b =>
                 {
+                    b.Navigation("Discounts");
+
                     b.Navigation("Documents");
 
                     b.Navigation("Notes");
@@ -2609,10 +2831,18 @@ namespace UcarMobileApi.Infrastructure.Migrations
                     b.Navigation("Vehicles");
                 });
 
-            modelBuilder.Entity("UcarMobileApi.Core.Entities.Appointments.AppointmentVehicle", b =>
+            modelBuilder.Entity("UcarMobileApi.Core.Entities.Appointments.AppointmentNote", b =>
+                {
+                    b.Navigation("Documents");
+                });
+
+            modelBuilder.Entity("UcarMobileApi.Core.Entities.Appointments.AppointmentService", b =>
                 {
                     b.Navigation("Parts");
+                });
 
+            modelBuilder.Entity("UcarMobileApi.Core.Entities.Appointments.AppointmentVehicle", b =>
+                {
                     b.Navigation("Services");
                 });
 
@@ -2628,6 +2858,8 @@ namespace UcarMobileApi.Infrastructure.Migrations
 
             modelBuilder.Entity("UcarMobileApi.Core.Entities.Payments.PaymentMethod", b =>
                 {
+                    b.Navigation("Appointments");
+
                     b.Navigation("Payments");
                 });
 
@@ -2671,6 +2903,8 @@ namespace UcarMobileApi.Infrastructure.Migrations
 
             modelBuilder.Entity("UcarMobileApi.Core.Entities.Users.User", b =>
                 {
+                    b.Navigation("Devices");
+
                     b.Navigation("UserRoles");
                 });
 

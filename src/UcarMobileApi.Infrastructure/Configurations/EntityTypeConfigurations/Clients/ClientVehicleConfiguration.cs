@@ -48,12 +48,11 @@ public class ClientVehicleConfiguration : IEntityTypeConfiguration<ClientVehicle
             .OnDelete(DeleteBehavior.Cascade);
 
         // Indexes
-        builder.HasIndex(cv => cv.ClientId);
-        builder.HasIndex(cv => cv.VehicleId);
         builder.HasIndex(cv => cv.VIN).IsUnique();
-        builder.HasIndex(cv => cv.LicensePlate);
 
         // Composite unique constraint for Client-Vehicle relationship
-        builder.HasIndex(cv => new { cv.ClientId, cv.VehicleId }).IsUnique();
+        builder.HasIndex(cv => new { cv.ClientId, cv.VehicleId, cv.AzId })
+            .IsUnique()
+            .HasFilter("\"AzId\" IS NOT NULL");
     }
 }

@@ -13,6 +13,7 @@ using UcarMobileApi.Application.Common.Interfaces;
 using UcarMobileApi.Application.DTOs.Payments;
 using UcarMobileApi.Application.Services.Security;
 using UcarMobileApi.Application.Validators;
+using UcarMobileApi.Core.Entities.Appointments;
 using UcarMobileApi.Core.Entities.Clients;
 using UcarMobileApi.Core.Entities.Payments;
 using UcarMobileApi.Core.Entities.Technicians;
@@ -105,21 +106,39 @@ public class StripePaymentService(
 
     #endregion
 
-    public async Task<IEnumerable<PaymentMethodListDto>> GetPaymentMethodsAsync(string authProviderId, CancellationToken cancellationToken = default)
+    private async Task<IEnumerable<PaymentMethodListDto>> QueryPaymentMethodsByClientIdAsync(
+        int clientId,
+        CancellationToken cancellationToken)
     {
-        var client = await context.Set<Client>()
-            .AsNoTracking()
-            .FirstOrDefaultAsync(c => c.AuthProviderId == authProviderId, cancellationToken);
-
-        if (client == null) return [];
-
         return await context.Set<PaymentMethod>()
-            .Where(pm => pm.ClientId == client.Id && !pm.IsDeleted)
             .AsNoTracking()
+            .Where(pm => pm.ClientId == clientId && !pm.IsDeleted)
             .OrderByDescending(pm => pm.IsDefault)   // default first
             .ThenBy(pm => pm.Brand)
             .ProjectTo<PaymentMethodListDto>(mapper.ConfigurationProvider)
             .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IEnumerable<PaymentMethodListDto>> GetPaymentMethodsAsync(string authProviderId, CancellationToken cancellationToken = default)
+    {
+        var clientId = await context.Set<Client>()
+            .AsNoTracking()
+            .Where(c => c.AuthProviderId == authProviderId)
+            .Select(c => c.Id)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (clientId == 0)
+            return [];
+
+        return await QueryPaymentMethodsByClientIdAsync(clientId, cancellationToken);
+    }
+
+    public async Task<IEnumerable<PaymentMethodListDto>> GetPaymentMethodsByClientIdAsync(int clientId, CancellationToken cancellationToken = default)
+    {
+        if (clientId <= 0)
+            return [];
+
+        return await QueryPaymentMethodsByClientIdAsync(clientId, cancellationToken);
     }
 
     public async Task<PaymentSetupDto> CreateSetupIntentAsync(string authProviderId, CancellationToken cancellationToken = default)
@@ -200,6 +219,53 @@ public class StripePaymentService(
         await context.SaveChangesAsync(cancellationToken);
     }
 
+    public async Task DetachPaymentMethodAsync(string authProviderId, int paymentMethodId, CancellationToken cancellationToken = default)
+    {
+        // Retrieve the PaymentMethod directly by validating the Client's AuthProviderId in the same query.
+        // This avoids an extra database roundtrip to fetch the 'Client' separately.
+        var localMethod = await context.Set<PaymentMethod>()
+            .Include(pm => pm.Appointments.Where(a => a.Status < AppointmentStatus.Completed)) // Filtered Include: Only load relevant appointments
+            .Where(pm => pm.Id == paymentMethodId && pm.Client.AuthProviderId == authProviderId)
+            .FirstOrDefaultAsync(cancellationToken)
+            ?? throw new KeyNotFoundException($"PaymentMethod {paymentMethodId} not found for the client.");
+
+        if (localMethod.IsDeleted)
+            return;
+
+        // Search for the replacement method BEFORE calling Stripe.
+        // If no replacement exists, we must fail here to avoid irreversible external changes (data inconsistency).
+        var replacementMethod = await context.Set<PaymentMethod>()
+            .Where(pm => pm.ClientId == localMethod.ClientId
+                         && pm.Id != localMethod.Id
+                         && !pm.IsDeleted) // Fix: Ensure we check the database status (!pm.IsDeleted), not the local variable
+            .FirstOrDefaultAsync(cancellationToken)
+            ?? throw new BusinessException("You cannot delete the only existing payment method.");
+
+        // 3. Stripe Operation: Only proceed once we know the local state can be successfully updated.
+        await HandleStripeOperationAsync(
+            () => _paymentMethodService.DetachAsync(localMethod.ProviderPaymentMethodId, null, null, cancellationToken),
+            "DetachPaymentMethod"
+        );
+
+        // 4. Update Data
+        localMethod.IsDeleted = true;
+
+        // If the deleted method was the default one, transfer the flag to the replacement.
+        if (localMethod.IsDefault)
+        {
+            replacementMethod.IsDefault = true;
+            // EF Core will automatically track this change since 'replacementMethod' was loaded from the context.
+        }
+
+        // Reassign pending appointments to the replacement method.
+        foreach (var appointment in localMethod.Appointments)
+        {
+            appointment.PaymentMethodId = replacementMethod.Id;
+        }
+
+        await context.SaveChangesAsync(cancellationToken);
+    }
+
     /// <summary>
     /// Creates and confirms a payment for the specified client using the selected payment method.
     /// Handles Stripe response codes and returns only structured information (no user messages).
@@ -211,33 +277,53 @@ public class StripePaymentService(
     /// A <see cref="PaymentDto"/> representing the result of the payment attempt, including
     /// provider status, client secret (for 3D Secure), and optional error codes.
     /// </returns>
+
     public async Task<PaymentDto> CreatePaymentAsync(string authProviderId, PaymentCreateDto dto, CancellationToken cancellationToken = default)
     {
-        var validator = new CreatePaymentValidator();
-        await validator.ValidateAndThrowAsync(dto, cancellationToken);
-
-        // Verify local idempotence
-        var existingPaymentId = await cache.GetAsync<int?>(dto.IdempotencyKey);
-        if (existingPaymentId.HasValue)
-        {
-            var existing = await context.Set<Payment>().FindAsync([existingPaymentId], cancellationToken);
-            if (existing != null)
-                return mapper.Map<PaymentDto>(existing);
-        }
-
         var client = await context.Set<Client>()
                          .AsNoTracking()
                          .Include(c => c.PaymentMethods)
                          .FirstOrDefaultAsync(c => c.AuthProviderId == authProviderId, cancellationToken)
-            ?? throw new KeyNotFoundException($"Client with AuthProviderId {authProviderId} not found.");
+                     ?? throw new KeyNotFoundException($"Client with AuthProviderId {authProviderId} not found.");
+
+        return await CreatePaymentInternalAsync(client, dto, cancellationToken);
+    }
+
+    public async Task<PaymentDto> CreatePaymentByClientIdAsync(int clientId, PaymentCreateDto dto, CancellationToken cancellationToken = default)
+    {
+        var client = await context.Set<Client>()
+                         .AsNoTracking()
+                         .Include(c => c.PaymentMethods)
+                         .FirstOrDefaultAsync(c => c.Id == clientId, cancellationToken)
+                     ?? throw new KeyNotFoundException($"Client with ID {clientId} not found.");
+
+        return await CreatePaymentInternalAsync(client, dto, cancellationToken);
+    }
+
+
+    private async Task<PaymentDto> CreatePaymentInternalAsync(Client client, PaymentCreateDto dto, CancellationToken cancellationToken)
+    {
+        var validator = new CreatePaymentValidator();
+        await validator.ValidateAndThrowAsync(dto, cancellationToken);
 
         if (string.IsNullOrEmpty(client.ProviderPaymentCustomerId))
             throw new InvalidOperationException("Client does not have an associated Stripe customer ID.");
 
-        var paymentMethod = client.PaymentMethods.FirstOrDefault(pm => pm.Id == dto.PaymentMethodId)
+        // Idempotency (local)
+        var existingPaymentId = await cache.GetAsync<int?>(dto.IdempotencyKey);
+        if (existingPaymentId.HasValue)
+        {
+            var existing = await context.Set<Payment>()
+                .FindAsync([existingPaymentId], cancellationToken);
+
+            if (existing != null)
+                return mapper.Map<PaymentDto>(existing);
+        }
+
+        var paymentMethod = client.PaymentMethods
+                                .FirstOrDefault(pm => pm.Id == dto.PaymentMethodId)
                             ?? throw new KeyNotFoundException("Payment method not found for this client.");
 
-        // Generate RequestOptions with idempotency
         var requestOptions = new RequestOptions { IdempotencyKey = dto.IdempotencyKey };
 
         var options = new PaymentIntentCreateOptions
@@ -253,6 +339,7 @@ public class StripePaymentService(
                 { "clientId", client.Id.ToString() },
                 { "source", "UcarMobile" },
                 { "idempotencyKey", requestOptions.IdempotencyKey }
+                // TODO: Add additional input parameters such as AppointmentId to later use it in the webhook to set the status of the paid appointment.
             }
         };
 

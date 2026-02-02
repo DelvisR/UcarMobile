@@ -1,6 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using UcarMobileApi.Application.Common.Interfaces;
+using UcarMobileApi.Core.Enums;
 
 namespace UcarMobileApi.Infrastructure.Services.Notifications;
 
@@ -15,6 +16,9 @@ public class NotificationService(IEmailService emailService, ISmsService smsServ
     /// </summary>
     public Task SendEmailAsync(string to, string subject, string body, CancellationToken ct = default)
         => emailService.SendEmailAsync(to, subject, body, ct);
+
+    public Task SendTemplateEmailAsync(string to, EmailTemplate templateName, string templateDataJson, CancellationToken ct = default)
+        => emailService.SendTemplateEmailAsync(to, templateName, templateDataJson, ct);
 
     /// <summary>
     /// Send an SMS notification.

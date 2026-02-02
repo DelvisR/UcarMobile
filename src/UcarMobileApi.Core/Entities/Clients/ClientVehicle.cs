@@ -20,7 +20,11 @@ public class ClientVehicle : EntityBase
     public string? VehicleType { get; set; }
     public string? BodyType { get; set; }
     public string? Fuel { get; set; }
+    public int OdometerKm { get; set; }
     public string? Notes { get; set; }
+    public int? AzId { get; set; }
+
+    public string FullName => $"{Vehicle.Year} {Vehicle.Make} {Submodel ?? Vehicle.Model} {Engine}".Trim();
 
     public ICollection<AppointmentVehicle> Appointments { get; set; } = [];
 }

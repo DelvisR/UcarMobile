@@ -22,4 +22,13 @@ public class StoredFile : EntityBase
 
     /// <summary>Size in bytes.</summary>
     public long Size { get; set; }
+
+    public DeleteStatus DeleteStatus { get; set; }
+}
+
+public enum DeleteStatus : byte
+{
+    None = 0,
+    Pending = 1,
+    Processing = 2
 }

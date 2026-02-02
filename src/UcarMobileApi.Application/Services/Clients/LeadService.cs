@@ -13,7 +13,7 @@ using UcarMobileApi.Application.Common.Interfaces;
 using UcarMobileApi.Application.Common.Models;
 using UcarMobileApi.Application.DTOs.Clients;
 using UcarMobileApi.Application.Utilities;
-using UcarMobileApi.Application.Validators.Clients;
+using UcarMobileApi.Application.Validators.Common;
 using UcarMobileApi.Core.Entities.Clients;
 
 namespace UcarMobileApi.Application.Services.Clients;
@@ -21,7 +21,7 @@ namespace UcarMobileApi.Application.Services.Clients;
 /// <summary>
 /// Lead service
 /// </summary>
-public class LeadService(IMapper mapper, IAppDbContext context, IGridifyMapper<Lead> gridifymapper)
+public class LeadService(IMapper mapper, IAppDbContext context, IGridifyMapper<Lead> gridifymapper, IValidatorResolver validatorResolver)
 {
     /// <summary>
     /// Retrieves all leads.
@@ -52,8 +52,7 @@ public class LeadService(IMapper mapper, IAppDbContext context, IGridifyMapper<L
     /// </summary>
     public async Task CreateAsync(LeadDto dto, CancellationToken ct)
     {
-        var validator = new LeadValidator();
-        await validator.ValidateAndThrowAsync(dto, ct);
+        await validatorResolver.Get<LeadDto>().ValidateAndThrowAsync(dto, ct);
 
         var entity = mapper.Map<Lead>(dto);
 
@@ -67,8 +66,7 @@ public class LeadService(IMapper mapper, IAppDbContext context, IGridifyMapper<L
     /// </summary>
     public async Task UpdateAsync(LeadDto dto, CancellationToken ct)
     {
-        var validator = new LeadValidator();
-        await validator.ValidateAndThrowAsync(dto, ct);
+        await validatorResolver.Get<LeadDto>().ValidateAndThrowAsync(dto, ct);
 
         var lead = await context.Set<Lead>().FirstOrDefaultAsync(x => x.Id == dto.Id, ct);
 

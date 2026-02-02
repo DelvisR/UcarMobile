@@ -11,6 +11,8 @@ public class Vehicle : EntityBase
     public string Model { get; set; } = string.Empty;
     public int Year { get; set; }
 
+    public string FullName => $"{Year} {Make} {Model}".Trim();
+
     public ICollection<VehicleSubModel> SubModels { get; set; } = [];
 
     public ICollection<ClientVehicle> Vehicles { get; set; } = [];

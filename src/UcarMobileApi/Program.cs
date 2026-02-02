@@ -1,6 +1,7 @@
 using UcarMobileApi.Configuration;
 using UcarMobileApi.Infrastructure.Configurations.Settings;
 using UcarMobileApi.Infrastructure.Factories;
+using UcarMobileApi.Infrastructure.Services.AutoZone.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -32,6 +33,10 @@ builder.Services.AddAwsSecretsManager(awsSettings);
 
 // Register DB connection factory and DbContext
 builder.Services.AddSingleton<IDbConnectionFactory, DbConnectionFactory>();
+
+// Add infraestructure services
+builder.Services.AddInfrastructure(awsSettings);
+
 builder.Services.AddAppDbContext(builder.Environment);
 
 // Register Stripe factory and service
@@ -45,9 +50,6 @@ builder.Services.AddMemoryCache();
 
 // Add services
 builder.Services.AddApplicationServices();
-
-// Add infraestructure services
-builder.Services.AddInfrastructure(awsSettings);
 
 // Authorization & Policies (Cognito + Dynamic Action)
 builder.Services.AddCognitoAuthAndPolicies(awsSettings);
@@ -77,6 +79,10 @@ builder.Services.AddBasicSecurity();
 
 builder.Services.AddGridifyConfiguration();
 
+// Add AutoZone settings and HttpClient
+builder.Services.AddAutoZone(builder.Configuration);
+
+
 // Build app
 var app = builder.Build();
 
@@ -85,6 +91,8 @@ await UcarMobileApi.Infrastructure.Data.DatabaseInitializer.InitializeAsync(app.
 
 // Initializes Stripe API configuration
 await app.Services.InitializeStripeAsync();
+
+await app.Services.InitializeAutoZone();
 
 // Middleware pipeline
 app.UseCustomMiddleware(); // ExceptionHandlingMiddleware
